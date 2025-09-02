@@ -1,0 +1,39 @@
+# Claude Code adapter configuration
+
+agent_name: "claude-code"
+output_format: "single_file"
+
+# File organization settings
+file_organization:
+  type: "single_file"
+  location: "repository_root"
+  filename: "CLAUDE.md"
+
+# Claude Code specific features
+features:
+  hooks_integration: true
+  command_patterns: true
+  subagent_support: true
+  single_rule_file: true
+  bash_tool_integration: true
+
+# Tool and integration preferences
+tool_references:
+  use_bash_tool: true
+  direct_file_access: true
+  command_execution: true
+  hook_integration: true
+
+# Configuration approach
+configuration_approach:
+  comprehensive_sections: true
+  detected_commands: true
+  claude_specific_features: true
+  integration_examples: true
+
+# Rule generation preferences
+rule_generation:
+  include_command_examples: true
+  include_hook_configurations: true
+  include_subagent_examples: true
+  focus_on_workflows: true

@@ -1,0 +1,43 @@
+# Cursor adapter configuration
+
+agent_name: "cursor"
+output_format: "multiple_files"
+
+# File organization settings
+file_organization:
+  type: "multiple_files"
+  location: ".cursor/rules/"
+  files:
+    - "development-workflow.mdc"
+    - "code-standards.mdc"
+    - "project-structure.mdc"
+    - "devops-practices.mdc"
+
+# Cursor specific features
+features:
+  rule_categories: true
+  focused_rule_files: true
+  cursor_specific_features: true
+  modular_organization: true
+  native_tool_integration: true
+
+# Tool and integration preferences
+tool_references:
+  cursor_native_tools: true
+  file_system_operations: true
+  integrated_workflows: true
+  context_aware_suggestions: true
+
+# Configuration approach
+configuration_approach:
+  categorized_rules: true
+  modular_structure: true
+  cursor_optimized: true
+  focused_sections: true
+
+# Rule generation preferences
+rule_generation:
+  split_by_category: true
+  include_cursor_features: true
+  optimize_for_context: true
+  focus_on_practices: true

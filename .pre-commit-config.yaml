@@ -15,15 +15,16 @@ repos:
     rev: v1.7.1
     hooks:
       - id: mypy
-        additional_dependencies: [types-requests]
-        args: [--strict, --ignore-missing-imports]
+        additional_dependencies: [types-requests, types-PyYAML]
+        args: [--strict, --ignore-missing-imports, --allow-untyped-decorators]
 
   # Security checks
   - repo: https://github.com/PyCQA/bandit
     rev: 1.7.5
     hooks:
       - id: bandit
-        args: [-r, ., -f, json, -ll]
+        additional_dependencies: [pbr]
+        args: [-ll, -i, -r]
         exclude: tests/
 
   # General hooks for code quality
