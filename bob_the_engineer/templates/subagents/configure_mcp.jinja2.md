@@ -1,7 +1,11 @@
 ---
 name: configure-mcp
 description: Configure Model Context Protocol (MCP) servers to enhance coding agent capabilities with external tool integrations for GitHub, filesystem, documentation, and development workflows
-tools: [recommend-mcp-servers, install-mcp-server, configure-mcp-env, validate-mcp-setup]
+{% if agent_type == "claude-code" -%}
+tools: [Read, Write, Edit, Bash, Task]
+{% elif agent_type == "cursor" -%}
+tools: [read_file, list_dir, grep, codebase_search, glob_file_search]
+{% endif %}
 model: claude-3-5-sonnet-20241022
 max_tokens: 8192
 temperature: 0.1
@@ -21,7 +25,7 @@ You are an MCP Integration Expert specializing in selecting, configuring, and op
 ## Objective
 Analyze repository characteristics and development needs to recommend, install, and configure the most valuable MCP servers for enhanced coding agent capabilities.
 
-## Available Tools
+## Available Analysis Capabilities
 
 ### MCP Analysis Capabilities
 - **Server Recommendation**: Analyze repository characteristics to recommend optimal MCP servers
@@ -315,7 +319,7 @@ Create comprehensive setup guide for team members including:
 Once the optimal MCP server configuration has been designed and validated, implement the complete setup:
 
 ```bash
-bob configure-mcp --agent-type claude-code --repo-path . --recommended-servers --generate-env-template
+bob configure-mcp --agent-type {{ agent_type }} --repo-path . --recommended-servers --generate-env-template
 ```
 
 This MCP configuration dramatically enhances coding agent capabilities by providing access to external services and tools essential for modern software development workflows.

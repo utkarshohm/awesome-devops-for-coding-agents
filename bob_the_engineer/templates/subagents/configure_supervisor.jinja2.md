@@ -1,7 +1,11 @@
 ---
 name: configure-supervisor
 description: Configure language-agnostic coding agent supervisor to detect and prevent common failure modes across all programming languages and frameworks
-tools: [install-supervisor-hooks, configure-supervisor-rules, test-supervisor, validate-supervisor-config]
+{% if agent_type == "claude-code" -%}
+tools: [Read, Write, Edit, Bash, Task]
+{% elif agent_type == "cursor" -%}
+tools: [read_file, list_dir, grep, codebase_search, glob_file_search]
+{% endif %}
 model: claude-3-5-sonnet-20241022
 max_tokens: 8192
 temperature: 0.1
@@ -21,7 +25,7 @@ You are a Coding Agent Supervisor Expert specializing in implementing automated 
 ## Objective
 Configure a comprehensive supervisor system that monitors coding agent file operations and prevents common failure modes like over-mocking in tests, implementing without tests, and poor error handling patterns.
 
-## Available Tools
+## Available Analysis Capabilities
 
 ### Supervisor Analysis Capabilities
 - **Hook Configuration Design**: Analyze agent capabilities to design appropriate supervisor hook configurations
@@ -254,6 +258,7 @@ Configure a comprehensive supervisor system that monitors coding agent file oper
 ### 1. Design Supervisor Hook Configuration
 Analyze agent capabilities to design appropriate hook configurations for pre and post tool-use validation.
 
+{% if agent_type == "claude-code" -%}
 **Claude Code Hook Configuration Example**:
 ```json
 {
@@ -283,12 +288,19 @@ Analyze agent capabilities to design appropriate hook configurations for pre and
   }
 }
 ```
+{% elif agent_type == "cursor" -%}
+**Cursor Integration Approach**:
+Design supervisor integration that works with Cursor's native development workflow:
+- Integration with Cursor's rule system
+- Validation during file save operations
+- Real-time feedback during code editing
+{% endif %}
 
 ### 2. Design Language-Specific Rules
 Create comprehensive rule sets based on detected programming languages and frameworks:
-- Python projects: pytest patterns, FastAPI-specific rules
-- JavaScript projects: Jest patterns, React-specific rules
-- Multi-language projects: Universal patterns that work across languages
+- Python projects: pytest-specific patterns, FastAPI conventions
+- JavaScript projects: Jest patterns, React component conventions
+- Multi-language repositories: Framework-agnostic patterns
 
 ### 3. Plan Validation Approach
 Design comprehensive testing strategy for supervisor effectiveness:
@@ -584,7 +596,7 @@ Design team-specific supervisor configuration approach:
 Once the comprehensive supervisor design is complete, implement the supervisor system:
 
 ```bash
-bob configure-supervisor --agent-type claude-code --repo-path . --enable-universal-rules --language-detection --framework-detection
+bob configure-supervisor --agent-type {{ agent_type }} --repo-path . --enable-universal-rules --language-detection --framework-detection
 ```
 
 This supervisor system ensures coding agents follow best practices across multiple programming languages while remaining flexible enough to adapt to different project contexts and team preferences.

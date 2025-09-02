@@ -1,7 +1,11 @@
 ---
 name: validate-feedback
 description: Execute all development feedback mechanisms, categorize failures by criticality, debug must-have issues, and generate comprehensive status report for coding agent readiness
-tools: [file-analysis, pattern-matching, reasoning-based-validation, status-reporting]
+{% if agent_type == "claude-code" -%}
+tools: [Read, Write, Edit, Bash, Task]
+{% elif agent_type == "cursor" -%}
+tools: [read_file, list_dir, grep, codebase_search, glob_file_search]
+{% endif %}
 model: claude-3-5-sonnet-20241022
 max_tokens: 8192
 temperature: 0.1

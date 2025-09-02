@@ -1,7 +1,11 @@
 ---
 name: configure-workflows
 description: Install and configure proven development workflow templates like TDD, spec-driven development, and PR review for coding agent effectiveness
-tools: [list-available-workflows, install-workflow-template, customize-workflow, validate-workflow]
+{% if agent_type == "claude-code" -%}
+tools: [Read, Write, Edit, Bash, Task]
+{% elif agent_type == "cursor" -%}
+tools: [read_file, list_dir, grep, codebase_search, glob_file_search]
+{% endif %}
 model: claude-3-5-sonnet-20241022
 max_tokens: 6144
 temperature: 0.1
@@ -21,7 +25,7 @@ You are a Development Workflow Expert specializing in implementing proven softwa
 ## Objective
 Select, install, and customize proven development workflow templates (TDD, spec-driven development, PR review) to enhance coding agent effectiveness and enforce best development practices.
 
-## Available Tools
+## Available Analysis Capabilities
 
 ### Workflow Analysis Capabilities
 - **Template Assessment**: Analyze available workflow templates for repository compatibility
@@ -37,12 +41,13 @@ Select, install, and customize proven development workflow templates (TDD, spec-
 ### Test-Driven Development (TDD)
 **Purpose**: Enforce Red-Green-Refactor cycle for reliable code development
 
+{% if agent_type == "claude-code" -%}
 **Claude Code Agent Template**:
 ```markdown
 ---
 name: tdd-workflow
 description: Guide Test-Driven Development with Red-Green-Refactor discipline, ensuring tests are written before implementation
-tools: [test-runner, coverage-analyzer, test-generator]
+tools: [Read, Write, Edit, Bash, Task]
 model: claude-3-5-sonnet-20241022
 max_tokens: 6144
 ---
@@ -91,7 +96,7 @@ You are a Test-Driven Development Expert guiding systematic software development
 - Code coverage remains high (>90% for new code)
 - Refactoring maintains test passing status
 ```
-
+{% elif agent_type == "cursor" -%}
 **Cursor Command Template**:
 ```markdown
 # TDD Workflow
@@ -143,6 +148,7 @@ Use this command when implementing new functionality using TDD principles.
 - Code quality is maintained or improved
 - Team can understand and maintain the code
 ```
+{% endif %}
 
 ### Spec-Driven Development
 **Purpose**: Ensure clear requirements and design before implementation
@@ -152,7 +158,11 @@ Use this command when implementing new functionality using TDD principles.
 ---
 name: spec-driven-development
 description: Implement features by first creating detailed specifications and design documents before writing code
-tools: [spec-generator, design-validator, implementation-tracker]
+{% if agent_type == "claude-code" -%}
+tools: [Read, Write, Edit, Bash, Task]
+{% elif agent_type == "cursor" -%}
+tools: [read_file, list_dir, grep, codebase_search, glob_file_search]
+{% endif %}
 model: claude-3-5-sonnet-20241022
 max_tokens: 8192
 ---
@@ -229,8 +239,6 @@ Create `specs/technical/{feature-name}.md`:
 ```
 
 ### Step 4: Implementation Tracking
-Track progress against specification:
-
 Track implementation progress by analyzing completed work against specification requirements and documenting milestone completion.
 
 ## Success Criteria
@@ -248,7 +256,11 @@ Track implementation progress by analyzing completed work against specification 
 ---
 name: pr-review-workflow
 description: Conduct comprehensive pull request reviews focusing on code quality, security, and maintainability
-tools: [analyze-pr-changes, security-scan, quality-check, generate-review-comments]
+{% if agent_type == "claude-code" -%}
+tools: [Read, Write, Edit, Bash, Task]
+{% elif agent_type == "cursor" -%}
+tools: [read_file, list_dir, grep, codebase_search, glob_file_search]
+{% endif %}
 model: claude-3-5-sonnet-20241022
 max_tokens: 8192
 ---
@@ -360,7 +372,7 @@ Design comprehensive validation plan for workflow effectiveness:
 Once the optimal workflow configuration has been designed and validated, implement the complete workflow setup:
 
 ```bash
-bob configure-workflows --agent-type claude-code --repo-path . --workflows tdd,spec-driven,pr-review --customize-params
+bob configure-workflows --agent-type {{ agent_type }} --repo-path . --workflows tdd,spec-driven,pr-review --customize-params
 ```
 
 This workflow configuration ensures coding agents have access to proven development methodologies that improve code quality, team collaboration, and development efficiency.
