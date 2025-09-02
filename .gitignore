@@ -1,0 +1,231 @@
+todo.md
+specs/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+#  Usually these files are written by a python script from a template
+#  before PyInstaller builds the exe, so as to inject date/other infos into it.
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# PyCharm
+#  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
+#  be added to the global gitignore or merged into this project gitignore.  For PyCharm
+#  Community Edition, use 'PyCharm CE' instead of 'PyCharm'.
+.idea/
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.tmp
+*.temp
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# Logs
+*.log
+*.log.*
+logs/
+log/
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Temporary folders
+tmp/
+temp/
+
+# Editor backup files
+*~
+*.bak
+*.tmp
+*.orig
+
+# Environment files
+.env
+.env.local
+.env.*.local
+local_settings.py
+settings_local.py
+
+# Cache directories
+.cache/
+.config/
+
+# Secrets and credentials
+secrets/
+.secrets
+credentials.json
+*.pem
+*.key
+.secrets.baseline
+!.secrets.baseline
+
+# Development and testing
+.tox
+.coverage
+.pytest_cache
+.cache
+
+# Documentation builds
+docs/_build
+docs/build
+_build/
+
+# Backup files
+*.backup
+*.bak
+
+# Profiling data
+*.prof
+
+# Local development
+.local/
+
+# Direnv
+.envrc.local
+
+# Pre-commit
+.pre-commit-config.yaml.bak
+
+# Ruff cache
+.ruff_cache/
+
+# CLI-specific ignores
+# Build artifacts from setuptools
+build/
+dist/
+*.egg-info/
+
+# CLI logs and output files
+*.cli.log
+output/
+results/
+
+# Temporary test files
+test_output/
+test_results/
+
+# Local configuration overrides
+config.local.*
+settings.local.*
