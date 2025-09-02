@@ -1,5 +1,4 @@
 todo.md
-specs/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -219,7 +218,6 @@ dist/
 
 # CLI logs and output files
 *.cli.log
-output/
 results/
 
 # Temporary test files
