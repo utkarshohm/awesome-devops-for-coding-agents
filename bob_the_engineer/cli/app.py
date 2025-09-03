@@ -13,6 +13,7 @@ from rich.text import Text
 
 from bob_the_engineer import __version__
 from bob_the_engineer.adapters.factory import AdapterFactory
+from bob_the_engineer.adapters.template_engine import TemplateEngine
 from bob_the_engineer.config_templates import (
     generate_config_content,
     get_template,
@@ -1097,6 +1098,168 @@ def doctor(
     except Exception as e:
         console.print(f"[red]Unexpected error:[/red] {e}")
         logger.error("Doctor command failed with unexpected error", error=str(e))
+        raise typer.Exit(1) from e
+
+
+@app.command()
+def init(
+    agent_type: str = typer.Option(
+        "claude-code", help="Type of coding agent (claude-code, cursor)"
+    ),
+    target_path: str = typer.Option(".", help="Path to target repository"),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Preview without writing"),
+    subagents_only: bool = typer.Option(
+        False, "--subagents-only", help="Install only subagents"
+    ),
+    workflows_only: bool = typer.Option(
+        False, "--workflows-only", help="Install only workflows"
+    ),
+    subagent: str | None = typer.Option(None, help="Install specific subagent only"),
+    workflow: str | None = typer.Option(None, help="Install specific workflow only"),
+) -> None:
+    """Initialize coding agent environment with subagents and workflows."""
+    logger = get_logger(__name__)
+
+    logger.info(
+        "Init command invoked",
+        agent_type=agent_type,
+        target_path=target_path,
+        dry_run=dry_run,
+        subagents_only=subagents_only,
+        workflows_only=workflows_only,
+        subagent=subagent,
+        workflow=workflow,
+    )
+
+    try:
+        # Validate agent type
+        supported_agents = ["claude-code", "cursor"]
+        if agent_type not in supported_agents:
+            console.print(f"[red]Error:[/red] Unsupported agent type: {agent_type}")
+            console.print(f"[dim]Supported types: {', '.join(supported_agents)}[/dim]")
+            raise typer.Exit(1)
+
+        # Validate repository path
+        repo_path_obj = Path(target_path).resolve()
+        if not repo_path_obj.exists():
+            console.print(
+                f"[red]Error:[/red] Repository path does not exist: {target_path}"
+            )
+            raise typer.Exit(1)
+
+        # Initialize template engine
+        templates_dir = Path(__file__).parent.parent / "templates"
+        template_engine = TemplateEngine(templates_dir)
+
+        # Determine what to install
+        install_subagents = not workflows_only
+        install_workflows = not subagents_only
+
+        # If specific items are requested, only install those
+        if subagent or workflow:
+            install_subagents = bool(subagent)
+            install_workflows = bool(workflow)
+
+        # Get available subagents and workflows
+        available_subagents = [
+            "build_test_run",
+            "configure_defaults",
+            "configure_mcp",
+            "configure_rules",
+            "configure_supervisor",
+            "detect_conflicting_instructions",
+            "improve_code_quality_checks",
+            "improve_debuggability",
+        ]
+
+        available_workflows = ["code-review", "spec-driven", "tdd"]
+
+        # Filter to specific items if requested
+        subagents_to_install = (
+            [subagent] if subagent else available_subagents if install_subagents else []
+        )
+        workflows_to_install = (
+            [workflow] if workflow else available_workflows if install_workflows else []
+        )
+
+        if dry_run:
+            # Preview mode
+            console.print(f"\n[cyan]Preview initialization for {agent_type}:[/cyan]")
+            console.print("[dim]" + "=" * 80 + "[/dim]")
+
+            if subagents_to_install:
+                console.print(
+                    f"[green]Subagents to install ({len(subagents_to_install)}):[/green]"
+                )
+                for sub in subagents_to_install:
+                    console.print(f"  [dim]→[/dim] {sub}")
+
+            if workflows_to_install:
+                console.print(
+                    f"[green]Workflows to install ({len(workflows_to_install)}):[/green]"
+                )
+                for wf in workflows_to_install:
+                    console.print(f"  [dim]→[/dim] {wf}")
+
+            console.print("[dim]" + "=" * 80 + "[/dim]")
+            console.print(
+                "[yellow]Dry run complete. Use without --dry-run to initialize.[/yellow]"
+            )
+        else:
+            # Initialize the coding agent environment
+            all_output_paths = []
+
+            # Install subagents
+            if subagents_to_install:
+                console.print(
+                    f"[cyan]Installing {len(subagents_to_install)} subagents for {agent_type}...[/cyan]"
+                )
+                for subagent_name in subagents_to_install:
+                    try:
+                        output_paths = template_engine.generate_subagent_rules(
+                            subagent_name, agent_type, repo_path_obj
+                        )
+                        all_output_paths.extend(output_paths)
+                        console.print(f"  [green]✓[/green] {subagent_name}")
+                    except Exception as e:
+                        console.print(f"  [red]✗[/red] {subagent_name}: {e}")
+                        continue
+
+            # Install workflows
+            if workflows_to_install:
+                console.print(
+                    f"[cyan]Installing {len(workflows_to_install)} workflows for {agent_type}...[/cyan]"
+                )
+                for workflow_name in workflows_to_install:
+                    try:
+                        output_paths = template_engine.install_coding_workflows(
+                            [workflow_name], agent_type, repo_path_obj
+                        )
+                        all_output_paths.extend(output_paths)
+                        console.print(f"  [green]✓[/green] {workflow_name}")
+                    except Exception as e:
+                        console.print(f"  [red]✗[/red] {workflow_name}: {e}")
+                        continue
+
+            # Success summary
+            if all_output_paths:
+                console.print(
+                    f"\n[green]✓ Successfully initialized {agent_type} environment![/green]"
+                )
+                console.print(f"[dim]Created {len(all_output_paths)} files:[/dim]")
+                for path in all_output_paths:
+                    rel_path = (
+                        path.relative_to(repo_path_obj)
+                        if path.is_relative_to(repo_path_obj)
+                        else path
+                    )
+                    console.print(f"  [dim]→[/dim] {rel_path}")
+            else:
+                console.print("[yellow]No files were created.[/yellow]")
+
+    except Exception as e:
+        console.print(f"[red]Error:[/red] {e}")
+        logger.error("Init command failed", error=str(e))
         raise typer.Exit(1) from e
 
 

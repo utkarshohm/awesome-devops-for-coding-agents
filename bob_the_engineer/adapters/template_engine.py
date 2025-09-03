@@ -284,3 +284,113 @@ class TemplateEngine:
             output_paths.append(output_file)
 
         return output_paths
+
+    def render_subagent_template(
+        self,
+        subagent_name: str,
+        agent_type: str,
+        target_path: Path,
+        additional_context: dict[str, Any] | None = None,
+    ) -> str:
+        """Render a subagent template for specified agent using two-pass rendering.
+
+        Args:
+            subagent_name: Name of the subagent template (e.g., 'detect_conflicting_instructions')
+            agent_type: Type of coding agent
+            target_path: Path to target repository
+            additional_context: Optional additional template context
+
+        Returns:
+            Rendered template content
+
+        Raises:
+            ValueError: If agent type or subagent is not supported
+        """
+        # Validate agent type
+        supported_agents = ["claude-code", "cursor"]
+        if agent_type not in supported_agents:
+            raise ValueError(f"Unsupported agent type: {agent_type}")
+
+        # Check if template exists
+        template_path = f"subagents/{subagent_name}.jinja2.md"
+        try:
+            template = self.env.get_template(template_path)
+        except Exception as e:
+            raise ValueError(f"Subagent template '{subagent_name}' not found") from e
+
+        # Create template context
+        template_context = {
+            "agent_type": agent_type,
+            "target_path": target_path,
+            **(additional_context or {}),
+        }
+
+        # TWO-PASS RENDERING:
+        # Pass 1: Render Jinja2 template (including frontmatter)
+        rendered_content = template.render(**template_context)
+
+        # Pass 2: Validate that frontmatter is valid YAML (optional)
+        # This ensures the rendered frontmatter is proper YAML
+        try:
+            lines = rendered_content.split("\n")
+            if lines[0] == "---":
+                # Find end of frontmatter
+                end_idx = None
+                for i, line in enumerate(lines[1:], 1):
+                    if line == "---":
+                        end_idx = i
+                        break
+
+                if end_idx:
+                    # Extract and validate frontmatter
+                    frontmatter_content = "\n".join(lines[1:end_idx])
+                    yaml.safe_load(frontmatter_content)  # Validate YAML
+
+        except yaml.YAMLError as e:
+            raise ValueError(
+                f"Invalid YAML frontmatter after template rendering: {e}"
+            ) from e
+
+        return str(rendered_content)
+
+    def generate_subagent_rules(
+        self,
+        subagent_name: str,
+        agent_type: str,
+        target_path: Path,
+        additional_context: dict[str, Any] | None = None,
+    ) -> list[Path]:
+        """Generate and write subagent rules for specified agent type.
+
+        Args:
+            subagent_name: Name of the subagent template
+            agent_type: Type of coding agent
+            target_path: Path to target repository
+            additional_context: Optional additional template context
+
+        Returns:
+            List of output file paths where rules were written
+        """
+        # Render template
+        rendered_content = self.render_subagent_template(
+            subagent_name, agent_type, target_path, additional_context
+        )
+
+        # Determine output path based on agent type
+        if agent_type == "claude-code":
+            # For Claude Code, create a command file
+            commands_dir = target_path / ".claude" / "commands"
+            commands_dir.mkdir(parents=True, exist_ok=True)
+            output_file = commands_dir / f"{subagent_name}.md"
+        elif agent_type == "cursor":
+            # For Cursor, create a command file
+            commands_dir = target_path / ".cursor" / "commands"
+            commands_dir.mkdir(parents=True, exist_ok=True)
+            output_file = commands_dir / f"{subagent_name}.md"
+        else:
+            raise ValueError(f"Unsupported agent type: {agent_type}")
+
+        # Write the rendered content
+        output_file.write_text(rendered_content, encoding="utf-8")
+
+        return [output_file]
