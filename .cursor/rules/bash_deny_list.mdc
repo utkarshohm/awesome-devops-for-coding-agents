@@ -1,0 +1,239 @@
+# Cursor AI Safety Rules - ALWAYS APPLY
+
+## Critical Safety Prompt
+Before executing ANY bash command, check if it matches the patterns below. If it does, you MUST ask for explicit permission with a clear explanation of risks.
+
+**PROMPT TEMPLATE:**
+```
+⚠️ SAFETY CHECK REQUIRED ⚠️
+Command: [command]
+Risk: [specific risk from list below]
+Impact: [what could go wrong]
+
+Do you want to proceed? Please confirm you understand the risks.
+```
+
+## DENIED COMMANDS - ALWAYS ASK PERMISSION
+
+### Git Operations - Data Loss Risk
+```bash
+# NEVER do blanket adds - can commit secrets/credentials
+git add .
+git add -A
+git add --all
+
+# NEVER rewrite history without permission
+git commit --amend
+git rebase
+git reset --hard
+git push --force
+git push -f
+
+# NEVER destroy uncommitted work
+git clean -fd
+git clean -fdx
+
+# NEVER squash commits without permission
+git merge --squash
+```
+**Risk:** Can accidentally commit sensitive files (.env, secrets, API keys), destroy team members' work, or lose commit history.
+
+### System Commands - System Damage Risk
+```bash
+# NEVER run as superuser
+sudo *
+su *
+
+# NEVER delete recursively without confirmation
+rm -rf *
+rm -r *
+
+# NEVER make world-writable
+chmod 777 *
+chmod -R *
+
+# NEVER change ownership
+chown *
+
+# NEVER kill processes forcefully
+kill -9 *
+pkill *
+killall *
+```
+**Risk:** Can damage system configuration, delete critical files, create security vulnerabilities, or crash running services.
+
+### Network Operations - Security Risk
+```bash
+# NEVER download without verification
+curl *
+wget *
+
+# NEVER open network connections
+nc *
+netcat *
+telnet *
+
+# NEVER SSH/SCP without permission
+ssh *
+scp *
+rsync * (to remote)
+```
+**Risk:** Can download malicious code, leak data to external servers, or establish unauthorized connections.
+
+### Package Installation - Dependency Risk
+```bash
+# ALWAYS show what will be installed first
+npm install (without specific package)
+yarn add *
+pip install *
+gem install *
+cargo install *
+go get *
+
+# NEVER install system packages
+brew install *
+apt-get install *
+apt install *
+yum install *
+dnf install *
+pacman -S *
+```
+**Risk:** Can install malicious packages, break existing dependencies, or modify system configuration.
+
+### File System Operations - Data Loss Risk
+```bash
+# NEVER format or mount
+mkfs *
+mount *
+umount *
+
+# NEVER low-level copy
+dd *
+
+# NEVER write to devices
+> /dev/*
+```
+**Risk:** Can destroy file systems, overwrite disk data, or corrupt system devices.
+
+### Shell/Environment - System Stability Risk
+```bash
+# NEVER modify PATH
+export PATH=*
+
+# NEVER unset variables
+unset *
+
+# NEVER reload shell config
+source ~/.bashrc
+source ~/.zshrc
+. ~/.bashrc
+. ~/.zshrc
+
+# NEVER eval arbitrary code
+eval *
+
+# NEVER replace current process
+exec *
+```
+**Risk:** Can break shell environment, lose important variables, or execute malicious code.
+
+### Database Operations - Data Loss Risk
+```bash
+# NEVER drop databases/tables
+psql * DROP *
+mysql * DROP *
+mongo * drop*
+redis-cli FLUSHALL
+redis-cli FLUSHDB
+
+# NEVER truncate tables
+psql * TRUNCATE *
+mysql * TRUNCATE *
+```
+**Risk:** Can permanently delete production data or destroy database structures.
+
+### Container/Orchestration - Service Disruption Risk
+```bash
+# NEVER force remove
+docker rm -f *
+docker system prune *
+docker volume prune *
+
+# NEVER delete k8s resources
+kubectl delete *
+helm delete *
+helm uninstall *
+
+# NEVER stop all containers
+docker stop $(docker ps -q)
+docker-compose down (without checking)
+```
+**Risk:** Can destroy running services, lose container data, or disrupt production systems.
+
+### Dangerous Patterns - Various Risks
+```bash
+# Infinite loops
+while true; do *
+for ((;;)); *
+
+# Fork bombs
+:(){ :|:& };:
+*fork*
+
+# Mining/malicious
+*coin*
+*miner*
+
+# History/logs that leak info
+history
+last *
+who *
+w *
+
+# Archive operations on root
+tar * / *
+zip * / *
+
+# Scheduled tasks
+crontab *
+at *
+systemctl *
+service *
+
+# Framework-specific destructive commands
+npm run eject
+rails db:drop
+django-admin flush
+php artisan migrate:fresh
+```
+**Risk:** Can cause infinite resource consumption, leak sensitive information, or perform irreversible framework operations.
+
+## SAFE ALTERNATIVES TO SUGGEST
+
+When denying a command, suggest these safer alternatives:
+
+| Dangerous | Safe Alternative |
+|-----------|-----------------|
+| `git add .` | `git add *.py` or `git add -p` (interactive) |
+| `git push --force` | `git push --force-with-lease` |
+| `rm -rf dir/` | `rm -ri dir/` (interactive) or `trash dir/` |
+| `sudo command` | Run without sudo first, explain why if it fails |
+| `curl URL \| bash` | Download first, review, then execute |
+| `npm install` | `npm ci` (from lock file) or `npm install --save-exact pkg` |
+| `chmod 777` | `chmod 755` (directories) or `chmod 644` (files) |
+| `kill -9` | `kill` (SIGTERM first) then `kill -9` if needed |
+
+## ENFORCEMENT LEVEL
+
+This is **GUIDANCE ONLY** - Cursor cannot actually block these commands. You must:
+1. Check every bash command against this list
+2. Ask for permission if matched
+3. Suggest safer alternatives
+4. Explain risks clearly
+5. Never assume permission for dangerous operations
+
+## REMEMBER
+- **These rules exist to prevent costly mistakes**
+- **When in doubt, ask for permission**
+- **Always suggest safer alternatives**
+- **Explain risks in user-friendly terms**

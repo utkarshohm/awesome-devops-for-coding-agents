@@ -1,0 +1,54 @@
+---
+alwaysApply: true
+---
+
+# Development Workflow for Bob the Engineer
+
+## Development Setup
+1. **Environment**: Use direnv - `.envrc` auto-activates venv
+2. **Installation**: `pip install -e '.[dev]'` for editable install with dev dependencies
+3. **Pre-commit**: `pre-commit install` to set up quality gates
+
+## Code Quality Pipeline
+1. **Ruff Check**: `ruff check . --fix` (linting with auto-fix)
+2. **Ruff Format**: `ruff format .` (code formatting)
+3. **Type Check**: `mypy bob_the_engineer/` (static type checking)
+4. **Tests**: `pytest` (test suite with coverage)
+5. **Pre-commit**: Runs automatically on commit, or `pre-commit run --all-files`
+
+## File Modifications
+- **pyproject.toml**: Tool configurations, dependencies, project metadata
+- **CLI Commands**: Add new commands to [bob_the_engineer/cli/app.py](mdc:bob_the_engineer/cli/app.py)
+- **Logging**: Configure in [bob_the_engineer/logging_config.py](mdc:bob_the_engineer/logging_config.py)
+
+## Adding New CLI Commands
+```python
+@app.command()
+def new_command(
+    param: str = typer.Argument(..., help="Description"),
+    option: bool = typer.Option(False, help="Option description"),
+) -> None:
+    """Command description for help text."""
+    logger = get_logger(__name__)
+    logger.info("Command started", param=param)
+
+    # Implementation here
+    console.print(f"[green]Success![/green]")
+    logger.info("Command completed successfully")
+```
+
+## Dependency Management
+- **Add Runtime Deps**: Edit `dependencies` in [pyproject.toml](mdc:pyproject.toml)
+- **Add Dev Deps**: Edit `dev` section in `project.optional-dependencies`
+- **Reinstall**: `pip install -e '.[dev]'` after changes
+
+## Release Process
+1. Update version in [pyproject.toml](mdc:pyproject.toml)
+2. Run full quality pipeline: `ruff check . --fix && ruff format . && pytest`
+3. Commit changes
+4. Tag release: `git tag v0.1.0`
+
+## Debugging
+- **CLI Testing**: Use `bob-the-engineer -v command` for verbose logging
+- **Pytest Debugging**: `pytest -v -s` for print output
+- **Log Files**: Use `--log-file logs/debug.log` CLI option

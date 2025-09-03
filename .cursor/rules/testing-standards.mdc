@@ -1,0 +1,54 @@
+---
+globs: test_*.py,*_test.py,tests/**/*.py
+---
+
+# Testing Standards for Bob the Engineer
+
+## Test Organization
+- **Location**: All tests in `tests/` directory
+- **Naming**: Use `test_*.py` or `*_test.py` pattern
+- **Structure**: Mirror the source package structure
+
+## Pytest Configuration
+- **Markers**: Use predefined markers from [pyproject.toml](mdc:pyproject.toml)
+  - `@pytest.mark.unit` - Fast, isolated unit tests
+  - `@pytest.mark.integration` - Slower tests with external dependencies
+  - `@pytest.mark.cli` - CLI command tests
+  - `@pytest.mark.slow` - Long-running tests
+
+## CLI Testing Pattern
+```python
+import pytest
+from typer.testing import CliRunner
+from bob_the_engineer.cli.app import app
+
+runner = CliRunner()
+
+@pytest.mark.unit
+def test_command():
+    """Test command description."""
+    result = runner.invoke(app, ["command", "--arg", "value"])
+    assert result.exit_code == 0
+    assert "expected output" in result.stdout
+```
+
+## Testing Standards
+- **Coverage**: Maintain >80% coverage (configured in pyproject.toml)
+- **Isolation**: Each test should be independent
+- **Fixtures**: Use pytest fixtures for common setup
+- **Assertions**: Use descriptive assertion messages
+- **Mocking**: Use pytest-mock for external dependencies
+
+## Test Data
+- **Location**: Keep test data in `tests/data/` if needed
+- **Fixtures**: Use `@pytest.fixture` for reusable test data
+- **Temporary Files**: Use pytest's `tmp_path` fixture
+
+## Running Tests
+```bash
+pytest                    # Run all tests
+pytest -v                 # Verbose output
+pytest -m unit           # Run only unit tests
+pytest -m "not slow"     # Skip slow tests
+pytest --cov            # With coverage report
+```

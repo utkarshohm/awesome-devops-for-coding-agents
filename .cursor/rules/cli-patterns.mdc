@@ -1,0 +1,94 @@
+---
+globs: **/cli/**/*.py
+---
+
+# CLI Development Patterns for Bob the Engineer
+
+## Typer Command Structure
+All CLI commands should follow this pattern:
+```python
+@app.command()
+def command_name(
+    # Required arguments first
+    required_arg: str = typer.Argument(..., help="Description"),
+
+    # Optional arguments
+    optional_arg: str | None = typer.Argument(None, help="Optional description"),
+
+    # Options with defaults
+    flag: bool = typer.Option(False, "--flag", "-f", help="Enable flag"),
+    value: str = typer.Option("default", "--value", help="Set value"),
+) -> None:
+    """Command description for help text.
+
+    Detailed description can go here explaining what the command does,
+    its use cases, and any important notes.
+    """
+    logger = get_logger(__name__)
+    logger.info("Command started", command="command_name", args=locals())
+
+    try:
+        # Implementation here
+        result = do_something(required_arg, optional_arg, flag, value)
+
+        # Success output using Rich
+        console.print(f"[green]✓[/green] Operation completed: {result}")
+        logger.info("Command completed successfully", result=result)
+
+    except Exception as e:
+        # Error handling
+        console.print(f"[red]✗[/red] Error: {e}")
+        logger.error("Command failed", error=str(e), command="command_name")
+        raise typer.Exit(1)
+```
+
+## Rich Console Integration
+- **Import**: `from rich.console import Console`
+- **Usage**: `console = Console()` at module level
+- **Success**: `console.print("[green]✓[/green] Success message")`
+- **Error**: `console.print("[red]✗[/red] Error message")`
+- **Info**: `console.print("[blue]ℹ[/blue] Info message")`
+- **Tables**: Use `rich.table.Table` for structured output
+
+## Command Categories
+- **Informational**: `version`, `status`, `help` - read-only operations
+- **Interactive**: Commands that prompt for user input
+- **Operational**: Commands that perform actions (deploy, build, etc.)
+
+## Error Handling Pattern
+```python
+from typer import Exit
+
+try:
+    # Operation that might fail
+    result = risky_operation()
+except SpecificError as e:
+    logger.error("Specific error occurred", error=str(e))
+    console.print(f"[red]Error:[/red] {e}")
+    raise Exit(1)
+except Exception as e:
+    logger.error("Unexpected error", error=str(e), traceback=True)
+    console.print(f"[red]Unexpected error:[/red] {e}")
+    raise Exit(2)
+```
+
+## Progress and Feedback
+```python
+from rich.progress import track, Progress
+
+# For simple progress
+for item in track(items, description="Processing..."):
+    process_item(item)
+
+# For complex progress with multiple tasks
+with Progress() as progress:
+    task = progress.add_task("Working...", total=len(items))
+    for item in items:
+        process_item(item)
+        progress.update(task, advance=1)
+```
+
+## Configuration and Context
+- **Global Options**: Use `@app.callback()` for app-wide options (verbose, log-file)
+- **Context**: Pass context between commands using typer.Context if needed
+- **Environment**: Access environment variables through the configured .envrc

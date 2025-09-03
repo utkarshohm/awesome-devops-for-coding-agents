@@ -1,0 +1,66 @@
+---
+description: Logging patterns and structured logging usage
+---
+
+# Structured Logging Patterns for Bob the Engineer
+
+## Configuration
+- **Main Config**: [bob_the_engineer/logging_config.py](mdc:bob_the_engineer/logging_config.py)
+- **Framework**: Structlog with stdlib integration
+- **CLI Integration**: Verbosity controlled via `-v` flags
+
+## Usage Pattern
+```python
+from bob_the_engineer.logging_config import get_logger
+
+logger = get_logger(__name__)
+
+# Basic logging with context
+logger.info("Operation started", user_id=123, action="deploy")
+logger.warning("Deprecation warning", feature="old_api", version="2.0")
+logger.error("Operation failed", error_type="ValidationError", details={"field": "email"})
+
+# Success/completion logging
+logger.info("Operation completed successfully", duration_ms=150, records_processed=42)
+```
+
+## Logging Levels
+- **DEBUG**: Detailed diagnostic info (use `-vv`)
+- **INFO**: General information about program flow (use `-v`)
+- **WARNING**: Something unexpected but not critical
+- **ERROR**: Error conditions that should be addressed
+
+## CLI Logging Setup
+The logging is automatically configured based on CLI verbosity:
+```python
+@app.callback()
+def main_callback(
+    verbose: int = typer.Option(0, "-v", "--verbose", count=True),
+    log_file: str | None = typer.Option(None, "--log-file"),
+) -> None:
+    """Configure logging based on CLI arguments."""
+    setup_cli_logging(verbose=verbose, log_file=log_file)
+```
+
+## Best Practices
+- **Context**: Always include relevant context in log messages
+- **Consistency**: Use consistent field names across the application
+- **No Secrets**: Never log sensitive information (API keys, passwords)
+- **Performance**: Logging is fast but avoid excessive DEBUG logs in hot paths
+- **Testing**: Use log capture in tests to verify behavior
+
+## Rich Integration
+For user-facing output, combine Rich console with logging:
+```python
+from rich.console import Console
+from bob_the_engineer.logging_config import get_logger
+
+console = Console()
+logger = get_logger(__name__)
+
+# User output
+console.print("[green]✓ Success![/green] Operation completed")
+
+# Logging for diagnostics
+logger.info("Operation completed", success=True, duration_ms=123)
+```

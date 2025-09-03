@@ -1,0 +1,48 @@
+---
+globs: *.py
+---
+
+# Python Code Standards for Bob the Engineer
+
+## Code Style (Enforced by Ruff)
+- **Line Length**: 88 characters maximum
+- **Python Version**: 3.10+ with modern syntax (use `X | None` instead of `Optional[X]`)
+- **Quotes**: Double quotes for strings (`"hello"` not `'hello'`)
+- **Import Organization**: Ruff handles import sorting automatically
+- **Formatting**: Ruff format handles all code formatting
+
+## Type Hints
+- **Required**: All function parameters and return types must have type hints
+- **Style**: Use modern union syntax `str | None` instead of `Optional[str]`
+- **Imports**: Use `from typing import TYPE_CHECKING` for forward references
+
+## CLI-Specific Standards
+- **Commands**: Use Typer decorators with proper docstrings
+- **Logging**: Always use structured logging via `get_logger(__name__)`
+- **Error Handling**: Use typer.Exit() for clean CLI exits
+- **Output**: Use Rich for formatted terminal output (tables, styling)
+
+## Example Pattern:
+```python
+import typer
+from bob_the_engineer.logging_config import get_logger
+
+logger = get_logger(__name__)
+
+@app.command()
+def my_command(
+    name: str = typer.Option(..., help="Name parameter"),
+    verbose: bool = typer.Option(False, "--verbose", "-v"),
+) -> None:
+    """Command description here."""
+    logger.info("Command started", name=name)
+    # Implementation
+    logger.info("Command completed")
+```
+
+## Forbidden Patterns
+- ❌ Print statements in CLI code (use Rich console or logging)
+- ❌ Global variables
+- ❌ Hardcoded paths (use Path objects)
+- ❌ Bare except clauses
+- ❌ Old-style string formatting (use f-strings)
