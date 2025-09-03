@@ -57,6 +57,57 @@ class BaseAdapter(ABC):
         """
         pass
 
+    @abstractmethod
+    def install_workflows(self, workflows: list[str]) -> list[Path]:
+        """Install workflow templates as agent commands.
+
+        Args:
+            workflows: List of workflow names to install
+
+        Returns:
+            List of output file paths where workflows were installed
+        """
+        pass
+
+    @abstractmethod
+    def install_subagents(self, subagents: list[str]) -> list[Path]:
+        """Install subagent templates as agent subagents.
+
+        Args:
+            subagents: List of subagent names to install
+
+        Returns:
+            List of output file paths where subagents were installed
+        """
+        pass
+
+    @abstractmethod
+    def configure_settings(self, settings: dict[str, Any]) -> Path:
+        """Update agent settings configuration.
+
+        Args:
+            settings: Dictionary of settings to update
+
+        Returns:
+            Path to the updated settings file
+        """
+        pass
+
+    @abstractmethod
+    def install_supervisor(self, guards: list[str]) -> Path:
+        """Install supervisor guards and hooks (Claude Code only).
+
+        Args:
+            guards: List of guard names to install
+
+        Returns:
+            Path to the updated configuration file
+
+        Raises:
+            NotImplementedError: For agents that don't support supervision
+        """
+        pass
+
     def validate_environment(self) -> bool:
         """Validate that the target environment is suitable for this adapter.
 

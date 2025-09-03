@@ -1,5 +1,6 @@
 """Template engine for generating agent-specific rule configurations."""
 
+import logging
 from pathlib import Path
 from typing import Any
 
@@ -142,3 +143,144 @@ class TemplateEngine:
         adapter.write_rules(rendered_content)
 
         return adapter.get_output_paths()
+
+    def list_coding_workflows(self) -> list[dict[str, str]]:
+        """List available coding workflow templates.
+
+        Returns:
+            List of workflow dictionaries with name, description, and purpose
+        """
+        workflows_dir = self.templates_dir / "workflows" / "coding"
+        workflows: list[dict[str, str]] = []
+
+        if not workflows_dir.exists():
+            return workflows
+
+        for template_file in workflows_dir.glob("*.jinja2.md"):
+            try:
+                template = self.env.get_template(
+                    f"workflows/coding/{template_file.name}"
+                )
+                # Render with dummy agent_type to extract frontmatter
+                content = template.render(agent_type="cursor")
+
+                # Parse frontmatter to get metadata
+                lines = content.split("\n")
+                if lines[0] == "---":
+                    end_idx = None
+                    for i, line in enumerate(lines[1:], 1):
+                        if line == "---":
+                            end_idx = i
+                            break
+
+                    if end_idx:
+                        frontmatter_content = "\n".join(lines[1:end_idx])
+                        metadata = yaml.safe_load(frontmatter_content)
+
+                        workflow_name = template_file.stem.replace(".jinja2", "")
+                        workflows.append(
+                            {
+                                "name": workflow_name,
+                                "title": metadata.get("name", workflow_name),
+                                "description": metadata.get(
+                                    "description", "No description available"
+                                ),
+                            }
+                        )
+            except Exception as e:
+                # Skip templates that can't be parsed
+                # Log the error but continue processing other templates
+                logger = logging.getLogger(__name__)
+                logger.debug(
+                    "Skipping template %s due to parsing error: %s",
+                    template_file.name,
+                    e,
+                )
+                continue
+
+        return workflows
+
+    def render_coding_workflow(
+        self,
+        workflow_name: str,
+        agent_type: str,
+        additional_context: dict[str, Any] | None = None,
+    ) -> str:
+        """Render a coding workflow template for specified agent.
+
+        Args:
+            workflow_name: Name of the workflow template
+            agent_type: Type of coding agent
+            additional_context: Optional additional template context
+
+        Returns:
+            Rendered workflow content
+
+        Raises:
+            ValueError: If workflow template doesn't exist or agent type is unsupported
+        """
+        template_path = f"workflows/coding/{workflow_name}.jinja2.md"
+
+        try:
+            template = self.env.get_template(template_path)
+        except Exception as e:
+            raise ValueError(f"Workflow template '{workflow_name}' not found") from e
+
+        # Validate agent type
+        supported_agents = ["claude-code", "cursor"]
+        if agent_type not in supported_agents:
+            raise ValueError(f"Unsupported agent type: {agent_type}")
+
+        # Create template context
+        template_context = {
+            "agent_type": agent_type,
+            **(additional_context or {}),
+        }
+
+        return str(template.render(**template_context))
+
+    def install_coding_workflows(
+        self,
+        workflow_names: list[str],
+        agent_type: str,
+        target_path: Path,
+        additional_context: dict[str, Any] | None = None,
+    ) -> list[Path]:
+        """Install coding workflow templates to the appropriate directory.
+
+        Args:
+            workflow_names: List of workflow names to install
+            agent_type: Type of coding agent
+            target_path: Path to target repository
+            additional_context: Optional additional template context
+
+        Returns:
+            List of output file paths where workflows were installed
+
+        Raises:
+            ValueError: If workflow or agent type is invalid
+        """
+        output_paths = []
+
+        # Determine target directory based on agent type
+        if agent_type == "claude-code":
+            commands_dir = target_path / ".claude" / "commands"
+        elif agent_type == "cursor":
+            commands_dir = target_path / ".cursor" / "commands"
+        else:
+            raise ValueError(f"Unsupported agent type: {agent_type}")
+
+        # Create directory if it doesn't exist
+        commands_dir.mkdir(parents=True, exist_ok=True)
+
+        # Install each workflow
+        for workflow_name in workflow_names:
+            rendered_content = self.render_coding_workflow(
+                workflow_name, agent_type, additional_context
+            )
+
+            output_file = commands_dir / f"{workflow_name}.md"
+            output_file.write_text(rendered_content, encoding="utf-8")
+            output_paths.append(output_file)
+
+        return output_paths

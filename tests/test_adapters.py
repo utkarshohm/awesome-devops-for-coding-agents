@@ -1,6 +1,5 @@
 """Tests for the adapter template system."""
 
-
 import pytest
 
 from bob_the_engineer.adapters.claude.rules_manager import ClaudeRulesManager
