@@ -48,7 +48,7 @@ npm install -g @modelcontextprotocol/server-github
 npm install -g @modelcontextprotocol/server-postgres
 ```
 
-### 3. Install Coding Agent Supervisor
+### 3. Install Coding Agent Supervisor (for claude code only)
 Set up guards and hooks to prevent common AI coding mistakes.
 
 **Command**:

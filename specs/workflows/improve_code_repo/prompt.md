@@ -190,26 +190,6 @@ The agent tracks progress:
 ⏸️ Phase 3: Breaking changes (Pending Approval)
 ```
 
-## Available Tools
-
-The agents use these Bob commands:
-```bash
-# Analysis
-bob-the-engineer analyze-feedback-gaps
-bob-the-engineer find-duplicate-commands
-bob-the-engineer analyze-error-handling
-
-# Suggestions
-bob-the-engineer suggest-linter-rules --language [lang]
-bob-the-engineer generate-precommit-config
-bob-the-engineer check-logging-coverage
-
-# Implementation
-bob-the-engineer add-formatter --language [lang]
-bob-the-engineer consolidate-commands
-bob-the-engineer enhance-error-context
-```
-
 ## Success Criteria
 
 ### Feedback Improvements

@@ -64,7 +64,6 @@ This will:
 If any step fails:
 1. Check the error messages in the agent output
 2. Run `bob-the-engineer doctor --repair` to fix installation issues
-3. Manually verify commands using `bob-the-engineer exec-with-analysis "[command]"`
 
 ## Next Steps
 
