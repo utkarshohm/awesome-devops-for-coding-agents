@@ -65,6 +65,7 @@ markers = [
     "slow: marks tests as slow running",
     "cli: marks tests as CLI tests"
 ]
+tdd_guard_project_root = "/Users/utkarshohm/projects/accelos/bob"
 
 # Coverage configuration
 [tool.coverage.run]
