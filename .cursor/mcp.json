@@ -1,10 +1,8 @@
 {
   "servers": {
-    "github": {
+    "context7": {
       "command": "npx",
-      "args": [
-        "@modelcontextprotocol/server-github"
-      ]
+      "args": ["-y", "@upstash/context7-mcp"]
     }
   }
 }
