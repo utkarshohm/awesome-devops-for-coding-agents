@@ -6,7 +6,7 @@ tools: [Read, Write, Edit, Bash, Task]
 {% elif agent_type == "cursor" -%}
 tools: [read_file, list_dir, grep, codebase_search, glob_file_search]
 {% endif %}
-model: claude-3-5-sonnet-20241022
+model: claude-sonnet-4-20250514
 max_tokens: 8192
 temperature: 0.1
 ---
@@ -25,10 +25,10 @@ Analyze repository characteristics and development needs to recommend, install, 
 
 ## Steps
 
-### Configure essential Servers
+### Step 1: Configure essential Servers
 This will be used in subsequent steps so keep retrying this until it's done successfully.
 
-#### 1. Deepwiki
+#### Deepwiki
 The DeepWiki MCP server is a free, remote, no-authentication-required service that provides access to public repositories.
 ```json
 {
@@ -39,22 +39,20 @@ The DeepWiki MCP server is a free, remote, no-authentication-required service th
   }
 }
 ```
-Help at https://docs.devin.ai/work-with-devin/deepwiki-mcp. If you fail to configure this server, then try alternatives like context7.
-
 
 ```bash
 bob configure-mcp --agent-type {{ agent_type }} --config <json>
 ```
 
-### Search for relevant MCP servers
+### Step 2: Search for relevant MCP servers
 
 Load your rules/claude.md files. Think through what mcp servers could be useful for development. Create search queries and Use deepwiki MCP server to search through the official MCP github repo modelcontextprotocol/servers to find relevant mcp servers. Give these suggestions to user and ask what kind of searches they would like to do. Run those.
 
-### Decide which ones to configure
+### Step 3: Decide which ones to configure
 
 Continue to use deepwiki to learn the installation instructions, install the package/binary and get json config that can be added to coding agent config.
 
-### Configure
+### Step 4: Configure
 
 Review the json configuration for correctness and security, then pass json to this cli command to configure it with the coding agent:
 
@@ -62,6 +60,24 @@ Review the json configuration for correctness and security, then pass json to th
 bob configure-mcp --agent-type {{ agent_type }} --config <json>
 ```
 
-### Validate
+### Step 5: Validate
 
 Validate with a message that the mcp server integration works
+
+
+## Troublehooting
+
+- If you fail to configure deepwiki, help is at https://docs.devin.ai/work-with-devin/deepwiki-mcp. After multiple failed attempts, try alternative like context7.
+- Verify MCP Configuration
+```bash
+{% if agent_type == "claude-code" -%}
+cat .claude/settings.json | jq .mcpServers
+{% elif agent_type == "cursor" -%}
+cat .cursor/settings.json | jq .mcpServers
+{% else -%}
+cat .claude/settings.json | jq .mcpServers
+{% endif %}
+```
+- Verify environment variables are set
+- Check server installation. for eg, `npm list -g @modelcontextprotocol`
+- Review logs in coding agent output

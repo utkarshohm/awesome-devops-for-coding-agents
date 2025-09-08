@@ -17,35 +17,34 @@ This workflow enhances your coding agent setup with advanced development workflo
 ## Workflow Steps
 
 ### 1. Install Best-Practice Development Workflows
-{% if agent_type == "claude-code" -%}
-Configure proven development workflows tailored to Claude Code.
-{% elif agent_type == "cursor" -%}
-Configure proven development workflows tailored to Cursor.
-{% else -%}
-Configure proven development workflows tailored to your coding agent.
-{% endif %}
+
+1a. Configure proven development workflows tailored to your coding agent by running below command.
 
 **Command**:
 ```bash
 !bob-the-engineer configure-coding-workflows --workflows spec-driven,tdd,code-review --agent-type {{ agent_type }}
 ```
+1b. Tell the user about the workflows and how to use them.
 
 Available workflows:
 - **spec-driven**: 6-phase iterative development
 - **tdd**: Test-first development with enforcement
 - **code-review**: Multi-aspect parallel review
-- **research**: Parallel information gathering
-- **triage**: Context gathering and problem diagnosis
 
-These will be installed as:
+These have been installed as:
 {% if agent_type == "claude-code" -%}
 - Claude Code: `.claude/commands/[workflow].md`
 {% elif agent_type == "cursor" -%}
 - Cursor: `.cursor/commands/[workflow].md`
-{% else -%}
-- Claude Code: `.claude/commands/[workflow].md`
-- Cursor: `.cursor/commands/[workflow].md`
 {% endif %}
+
+You can now use them by typing this in your chat:
+{% if agent_type == "claude-code" -%}
+- Claude Code: `/spec-driven`, `/tdd`, `/code-review`
+{% elif agent_type == "cursor" -%}
+- Cursor: `@spec-driven`, `@tdd`, `@code-review`
+{% endif %}
+
 
 ### 2. Configure MCP Servers
 Set up Model Context Protocol servers for enhanced capabilities.
@@ -66,7 +65,8 @@ Guards installed (in priority order):
 2. **tdd-guard**: Enforces test-first development
 3. **self-review**: Catches implementation shortcuts
 
-**Note**: Guards are automatically disabled in plan/ask mode to avoid conflicts.
+**Note**: Guards are automatically disabled in plan/ask mode because it no files are written in that mode.
+
 {% elif agent_type == "cursor" -%}
 ### 3. Configure Advanced Cursor Features
 Set up enhanced Cursor-specific features for improved development experience.
@@ -83,31 +83,6 @@ Features configured:
 {% endif %}
 
 ## Using the Installed Features
-
-### Development Workflows
-
-After installation, use the workflows with:
-{% if agent_type == "claude-code" -%}
-- Claude Code: `/spec-driven`, `/tdd`, `/code-review`
-{% elif agent_type == "cursor" -%}
-- Cursor: `@spec-driven`, `@tdd`, `@code-review`
-{% else -%}
-- Claude Code: `/spec-driven`, `/tdd`, `/code-review`
-- Cursor: `@spec-driven`, `@tdd`, `@code-review`
-{% endif %}
-
-### MCP Servers
-
-{% if agent_type == "claude-code" -%}
-Once configured, Claude Code can:
-{% elif agent_type == "cursor" -%}
-Once configured, Cursor can:
-{% else -%}
-Once configured, the coding agent can:
-{% endif %}
-- Access documentation: "Look up React hooks documentation"
-- Manage GitHub: "Create an issue for this bug"
-- Query databases: "Show me the user table schema"
 
 {% if agent_type == "claude-code" -%}
 ### Supervisor Guards
@@ -147,16 +122,6 @@ ls -la .cursor/commands/  # For Cursor
 {% endif %}
 ```
 
-### Verify MCP Configuration
-```bash
-{% if agent_type == "claude-code" -%}
-cat .claude/settings.json | jq .mcpServers
-{% elif agent_type == "cursor" -%}
-cat .cursor/settings.json | jq .mcpServers
-{% else -%}
-cat .claude/settings.json | jq .mcpServers
-{% endif %}
-```
 
 {% if agent_type == "claude-code" -%}
 ### Test Supervisor Guards
@@ -205,7 +170,7 @@ Edit `.claude/settings.json` hooks section:
 bob-the-engineer configure-mcp --servers custom-server
 ```
 
-## Troubleshooting
+## Troublehooting
 
 ### Workflows Not Appearing
 {% if agent_type == "claude-code" -%}
@@ -217,11 +182,6 @@ bob-the-engineer configure-mcp --servers custom-server
 {% endif %}
 - Restart coding agent session
 - Run `bob-the-engineer doctor --repair`
-
-### MCP Servers Not Working
-- Verify environment variables are set
-- Check server installation: `npm list -g @modelcontextprotocol`
-- Review logs in coding agent output
 
 {% if agent_type == "claude-code" -%}
 ### Guards Too Restrictive
@@ -235,12 +195,6 @@ bob-the-engineer configure-mcp --servers custom-server
 After setup, consider:
 1. Running "Improve Code Repo" workflow for enhanced AI autonomy
 2. Customizing workflows for your team's needs
-3. Training team on new features
-{% if agent_type == "claude-code" -%}
-4. Monitoring guard effectiveness
-{% elif agent_type == "cursor" -%}
-4. Optimizing Cursor settings for your workflow
-{% endif %}
 
 ## Success Criteria
 

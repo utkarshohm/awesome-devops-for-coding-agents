@@ -29,7 +29,7 @@ The agent will:
 
 ### 2. Validate Feedback Mechanisms
 
-**Subagent**: `@build-test-run test and validate all feedback mechanisms`
+**Subagent**: `@build-test-run try and validate all feedback mechanisms`
 
 The agent will:
 - Execute build, test, lint commands
@@ -38,38 +38,8 @@ The agent will:
 - Generate comprehensive report
 
 ### 3. Configure Best-Practice Defaults
-{% if agent_type == "claude-code" -%}
-Set up Claude Code with best-practice defaults while preserving user customizations.
-{% elif agent_type == "cursor" -%}
-Set up Cursor with best-practice defaults while preserving user customizations.
-{% else -%}
-Set up the coding agent with best-practice defaults while preserving user customizations.
-{% endif %}
 
-**Step 3a: Review Available Templates**
-First, explore the available configuration templates to understand your options:
-
-```bash
-!bob-the-engineer configure-defaults --list
-```
-
-This will display detailed information about each template:
-- **solo-developer**: Streamlined for individual developers and rapid prototyping
-- **development-team**: Optimized for 2-5 developers with CI/CD and code review
-- **enterprise-security**: High-security for large teams and regulated environments
-
-**Step 3b: Apply Configuration**
-Choose one of these approaches:
-
-```bash
-!bob-the-engineer configure-defaults --agent-type {{ agent_type }} --template-type <user-input> --repo-path .
-```
-
-{% if agent_type == "claude-code" -%}
-- Enable thinking/reasoning features appropriately
-{% endif %}
-- Configure tool permissions based on your tech stack
-- Preserve existing user customizations
+**Subagent**: `@configure-defaults `
 
 ## Success Criteria
 
