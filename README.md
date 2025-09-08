@@ -1,6 +1,6 @@
-# Bob the Engineer - Awesome DevOps Agents
+# Bob the Engineer - Awesome DevOps Agent for Coding Agents
 
-A DevOps automation framework providing highly reliable subagents and workflows for Claude Code and Cursor, with a powerful companion CLI `bob-the-engineer`.
+A DevOps automation framework providing highly reliable subagents and workflows that works on existing large code bases. It uses the coding agent's agentic abstractions and a CLI `bob-the-engineer`.
 
 ## Overview
 
@@ -12,28 +12,32 @@ Bob the Engineer transforms your AI coding assistant into a DevOps powerhouse by
 
 ## Key Features
 
-### 🚀 Coding agent setup Workflows (`workflows/devops/`)
+### 🤖 Subagents for common devops tasks
 
-- **Start Using Coding Agent** (`start_using_coding_agent.jinja2.md`): Onboard AI agents to existing large codebases
-- **Use Coding Agent Effectively** (`use_coding_agent_effectively.jinja2.md`): Configure advanced features like MCP and supervisor guards
-- **Improve Code Repository** (`improve_code_repo.jinja2.md`): Detect and fix code quality issues systematically
+#### Setup coding agent on existing large code base
 
-#### Coding agent configuration subagents
-- **`configure-rules`**: Generate agent-specific rule files (CLAUDE.md or .cursor/rules/)
-- **`configure-defaults`**: Auto-detect repository characteristics and apply optimal coding agent settings like allowed and denied bash commands based on your organizational context
-- **`configure-mcp`**: Set up necessary MCP servers and find servers relevant to your code
-- **`configure-supervisor`**: Install guards using Claude Code hooks to agentically catch common mistakes coding agents make and give feedback to them in real-time, so that you are not repeating yourself again and again
-- **`configure-coding-workflows`**: Install the coding workflows as first class commands
+1. **`configure-rules`**: Generate agent-specific rule files (CLAUDE.md or .cursor/rules/)
+2. **`build-test-run`**: Validate and resolve failures in feedback mechanisms (build, test, lint, run) to start using coding agents
+3. [wip]**`configure-defaults`**: Auto-detect repository characteristics and apply optimal coding agent settings like allowed and denied bash commands based on your organizational context
+4. **`configure-mcp`**: Set up necessary MCP servers and find servers relevant to your code
+5. [wip]**`configure-supervisor`**: Install guards using Claude Code hooks to agentically catch common mistakes coding agents make and give feedback to them in real-time, so that you are not repeating yourself again and again
+6. **`configure-coding-workflows`**: Install the coding workflows as first class commands
+7. [wip]**`detect-conflicting-instructions`**: Find and resolve contradictory docs, configurations, code blocks that can confuse coding agents
+8. [wip]**`improve-code-quality-checks`**: Strengthen linting, formatting, code cov checks to provide quicker feedback to coding agents
+9. [wip]**`improve-debuggability`**: Improve logging, error handling, and debugging capabilities so that coding agents can debug issues and produce production-ready code
 
-#### Subagents to make your code ready for coding agents
-- **`build-test-run`**: Validate and resolve failures in feedback mechanisms (build, test, lint, run) to start using coding agents
-- **`detect-conflicting-instructions`**: Find and resolve contradictory docs, configurations, code blocks that can confuse coding agents
-- **`improve-code-quality-checks`**: Strengthen linting, formatting, code cov checks to provide quicker feedback to coding agents
-- **`improve-debuggability`**: Improve logging, error handling, and debugging capabilities so that coding agents can debug issues and produce production-ready code
+#### Other devops tasks
+Coming soon
 
+### 🚀 Workflows that package subagents together
 
+####  Coding agent setup Workflows (`workflows/devops/`)
 
-### 🤖 Coding Workflows (`workflows/coding/`)
+- **Start Using Coding Agent** (`start_using_coding_agent.jinja2.md`): Onboard AI agents to existing large codebases using the first 3 subagents
+- **Use Coding Agent Effectively** (`use_coding_agent_effectively.jinja2.md`): Configure advanced features you need to avoid repeating yourself. Uses subagents 4-6
+- **Improve Code Repository** (`improve_code_repo.jinja2.md`): Detect and fix code quality issues systematically that if not fixed will make the coding agent failure prone. Uses subagents 7-9
+
+#### Coding Workflows (`workflows/coding/`)
 - **TDD Workflow** (`tdd.jinja2.md`): Enforces test-first development with automatic test generation and validation
 - **Code Review** (`code-review.jinja2.md`): Multi-aspect parallel review covering security, performance, and best practices
 - **Spec-Driven Development** (`spec-driven.jinja2.md`): 6-phase iterative development from requirements to deployment
@@ -74,6 +78,23 @@ bob_the_engineer/
 
 ## Installation
 
+### Install the CLI
+
+```bash
+pip install bob-the-engineer
+
+# Initialize with all subagents and workflows
+bob-the-engineer init --agent-type claude-code
+
+# Or apply best-practice defaults based on team size
+bob-the-engineer configure-defaults --agent-type claude-code --template-type development-team
+
+# Available templates:
+# - solo-developer: Fast iteration for individual developers
+# - development-team: Balanced for 2-5 person teams with CI/CD
+# - enterprise-security: High-security with audit trails
+```
+
 ### From Source
 ```bash
 # Clone the repository
@@ -91,22 +112,9 @@ pip install -e .
 bob-the-engineer --help
 ```
 
-### Quick Setup for Your Repository
-
-```bash
-# Initialize with all subagents and workflows
-bob-the-engineer init --agent-type claude-code
-
-# Or apply best-practice defaults based on team size
-bob-the-engineer configure-defaults --agent-type claude-code --template-type development-team
-
-# Available templates:
-# - solo-developer: Fast iteration for individual developers
-# - development-team: Balanced for 2-5 person teams with CI/CD
-# - enterprise-security: High-security with audit trails
-```
-
 ## Usage Examples
+
+You can use the agentic workflows/subagents via the coding agent or take over agency and invoke the lower-level CLI commands yourself. I would recommend the former to get started and move to the latter when you want to build your own workflows/agents
 
 ### Setting Up a New Project
 
