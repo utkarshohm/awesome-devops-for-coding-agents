@@ -200,6 +200,42 @@ class TemplateEngine:
 
         return workflows
 
+    def list_available_subagents(self) -> list[str]:
+        """List available subagent templates.
+
+        Returns:
+            List of subagent template names (without .jinja2.md extension)
+        """
+        subagents_dir = self.templates_dir / "subagents"
+        subagents: list[str] = []
+
+        if not subagents_dir.exists():
+            return subagents
+
+        for template_file in subagents_dir.glob("*.jinja2.md"):
+            subagent_name = template_file.stem.replace(".jinja2", "")
+            subagents.append(subagent_name)
+
+        return sorted(subagents)
+
+    def list_available_workflows(self) -> list[str]:
+        """List available workflow templates.
+
+        Returns:
+            List of workflow template names (without .jinja2.md extension)
+        """
+        workflows_dir = self.templates_dir / "workflows" / "coding"
+        workflows: list[str] = []
+
+        if not workflows_dir.exists():
+            return workflows
+
+        for template_file in workflows_dir.glob("*.jinja2.md"):
+            workflow_name = template_file.stem.replace(".jinja2", "")
+            workflows.append(workflow_name)
+
+        return sorted(workflows)
+
     def render_coding_workflow(
         self,
         workflow_name: str,

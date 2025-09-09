@@ -2,8 +2,11 @@
 
 import json
 import shutil
+from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
+
+from rich.console import Console
 
 from ..base import BaseAdapter
 
@@ -190,6 +193,124 @@ class ClaudeRulesManager(BaseAdapter):
 
         return self.configure_settings(hooks_config)
 
+    @staticmethod
+    def load_settings_template(template_name: str) -> dict[str, Any]:
+        """Load a Claude Code settings template from the templates directory."""
+        template_file = (
+            Path(__file__).parent.parent.parent
+            / "templates"
+            / "claude-code-only"
+            / f"settings_{template_name}.json"
+        )
+
+        if not template_file.exists():
+            available = ClaudeRulesManager.list_available_templates()
+            available_names = [t.stem.replace("settings_", "") for t in available]
+            raise FileNotFoundError(
+                f"Template '{template_name}' not found. Available: {', '.join(available_names)}"
+            )
+
+        with template_file.open() as f:
+            return cast(dict[str, Any], json.load(f))
+
+    @staticmethod
+    def list_available_templates() -> list[Path]:
+        """List all available Claude Code settings templates."""
+        templates_dir = (
+            Path(__file__).parent.parent.parent / "templates" / "claude-code-only"
+        )
+        if not templates_dir.exists():
+            return []
+        return list(templates_dir.glob("settings_*.json"))
+
+    def apply_settings_template(
+        self, template: dict[str, Any], dry_run: bool = False
+    ) -> None:
+        """Apply a Claude Code settings template to the project.
+
+        Args:
+            template: The template configuration dictionary
+            dry_run: If True, preview changes without applying them
+        """
+        console = Console()
+
+        template_info = template.get("_template_info", {})
+        template_name = template_info.get("name", "unknown")
+
+        if dry_run:
+            console.print(
+                f"\n[bold yellow]Dry Run - {template_name} template for Claude Code[/bold yellow]"
+            )
+            console.print(
+                f"[dim]Description: {template_info.get('description', 'N/A')}[/dim]"
+            )
+            console.print(
+                f"[dim]Best for: {template_info.get('best_for', 'N/A')}[/dim]"
+            )
+
+            settings_file = self.target_path / ".claude" / "settings.json"
+            console.print(f"[dim]Would update: {settings_file}[/dim]")
+
+            # Show permissions summary
+            permissions_summary = template_info.get("permissions_summary", {})
+            if permissions_summary:
+                console.print("\n[bold]Configuration Summary:[/bold]")
+                for perm_type, descriptions in permissions_summary.items():
+                    if perm_type == "allow":
+                        console.print("[green]✓ ALLOWED Operations:[/green]")
+                    elif perm_type == "deny":
+                        console.print("[red]✗ DENIED Operations:[/red]")
+                    elif perm_type == "ask":
+                        console.print("[yellow]? ASK Operations:[/yellow]")
+
+                    for i, desc in enumerate(descriptions, 1):
+                        console.print(f"  {i}. {desc}")
+                    console.print()
+
+            console.print(
+                "[yellow]This is a preview. Remove --dry-run to apply changes.[/yellow]"
+            )
+            return
+
+        # Apply the configuration
+        console.print(
+            f"\n[bold green]Applying {template_name} template for Claude Code[/bold green]"
+        )
+
+        # Create backup if settings exist
+        settings_file = self.target_path / ".claude" / "settings.json"
+        if settings_file.exists():
+            backup_file = settings_file.with_suffix(
+                f".json.backup-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+            )
+            backup_file.write_text(settings_file.read_text())
+            console.print(f"[dim]✓ Created backup: {backup_file.name}[/dim]")
+
+        # Remove template metadata and apply settings
+        settings_data = {k: v for k, v in template.items() if not k.startswith("_")}
+        self.configure_settings(settings_data)
+
+        # Show summary
+        template_info = template.get("_template_info", {})
+        console.print(f"\n[bold cyan]Applied Template: {template_name}[/bold cyan]")
+        console.print(
+            f"[dim]Description: {template_info.get('description', 'N/A')}[/dim]"
+        )
+
+        # Show key permissions summary
+        if "permissions" in settings_data:
+            perms = settings_data["permissions"]
+            if "allow" in perms:
+                console.print(
+                    f"[green]✓[/green] {len(perms['allow'])} allowed operations"
+                )
+            if "deny" in perms:
+                console.print(f"[red]✗[/red] {len(perms['deny'])} denied operations")
+            if "ask" in perms:
+                console.print(
+                    f"[yellow]?[/yellow] {len(perms['ask'])} operations require approval"
+                )
+
     def _generate_workflow_command(self, workflow_name: str, template_name: str) -> str:
         """Generate a basic workflow command template.
 
@@ -204,7 +325,7 @@ class ClaudeRulesManager(BaseAdapter):
 name: {workflow_name}
 description: {workflow_name.replace("-", " ").title()} workflow for development
 tools: [Read, Write, Edit, Bash, Task]
-model: claude-3-5-sonnet-20241022
+model: claude-sonnet-4-20250514
 max_tokens: 8192
 temperature: 0.3
 ---
@@ -239,7 +360,7 @@ This workflow will guide you through the {workflow_name} development process.
 name: {subagent_name}
 description: {subagent_name.replace("-", " ").title()} subagent
 tools: [Read, Write, Edit, Bash]
-model: claude-3-5-sonnet-20241022
+model: claude-sonnet-4-20250514
 max_tokens: 4096
 temperature: 0.3
 ---

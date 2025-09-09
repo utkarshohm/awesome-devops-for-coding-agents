@@ -1,0 +1,55 @@
+{
+  "_template_info": {
+    "name": "vibe-coder",
+    "description": "Fast iteration mode for solo developers and rapid prototyping",
+    "best_for": "Individual developers, personal projects, rapid iteration with minimal overhead",
+    "permissions_summary": {
+      "allow": [
+        "Read-only file system operations for safe exploration and analysis",
+        "Safe git operations for repository inspection and status checking",
+        "Process and environment inspection for debugging and context"
+      ]
+    }
+  },
+  "permissions": {
+    "allow": [
+      "Bash(ls:*)",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(cat:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(wc:*)",
+      "Bash(tree:*)",
+      "Bash(pwd)",
+      "Bash(which:*)",
+      "Bash(type:*)",
+      "Bash(file:*)",
+      "Bash(stat:*)",
+      "Bash(du:*)",
+      "Bash(df)",
+      "Bash(git status)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git branch:*)",
+      "Bash(git show:*)",
+      "Bash(git remote -v)",
+      "Bash(git stash list)",
+      "Bash(ps:*)",
+      "Bash(env)",
+      "Bash(printenv)",
+      "Bash(date)",
+      "Bash(whoami)",
+      "Bash(uname:*)"
+    ],
+    "defaultMode": "acceptEdits"
+  },
+  "env": {
+    "BASH_DEFAULT_TIMEOUT_MS": "45000",
+    "BASH_MAX_OUTPUT_LENGTH": "20000",
+    "CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR": "1",
+    "PYTHONPATH": "."
+  },
+  "includeCoAuthoredBy": false,
+  "cleanupPeriodDays": 7
+}

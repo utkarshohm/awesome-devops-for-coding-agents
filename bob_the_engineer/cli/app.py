@@ -9,17 +9,13 @@ import typer
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
-from rich.text import Text
 
 from bob_the_engineer import __version__
+from bob_the_engineer.adapters.claude.rules_manager import ClaudeRulesManager
+from bob_the_engineer.adapters.cursor.rules_manager import CursorRulesManager
 from bob_the_engineer.adapters.factory import AdapterFactory
 from bob_the_engineer.adapters.template_engine import TemplateEngine
-from bob_the_engineer.config_templates import (
-    generate_config_content,
-    get_template,
-    list_templates,
-)
-from bob_the_engineer.logging_config import get_logger, setup_cli_logging
+from bob_the_engineer.cli.logging_config import get_logger, setup_cli_logging
 
 # Create the main Typer app
 app = typer.Typer(
@@ -99,25 +95,26 @@ def status() -> None:
     # Git repository check
     if git_dir.exists():
         table.add_row("Git Repository", "✓ Found", str(git_dir.absolute()))
-        logger.info("Git repository found", path=str(git_dir.absolute()))
+        logger.info("Git repository detected")
     else:
-        table.add_row("Git Repository", "✗ Not found", "Not a git repository")
-        logger.warning("Git repository not found")
+        table.add_row("Git Repository", "✗ Not found", "Not in a git repository")
+        logger.warning("No git repository found")
 
     # Configuration files check
     config_files = [
         ("pyproject.toml", "Python project config"),
         (".pre-commit-config.yaml", "Pre-commit hooks"),
-        ("README.md", "Project documentation"),
+        ("package.json", "Node.js project config"),
+        ("Dockerfile", "Container configuration"),
     ]
 
     for filename, description in config_files:
-        file_path = Path(filename)
-        if file_path.exists():
-            table.add_row(filename, "✓ Found", description)
+        filepath = Path(filename)
+        if filepath.exists():
+            table.add_row(description, "✓ Found", str(filepath.absolute()))
             logger.info("Configuration file found", file=filename)
         else:
-            table.add_row(filename, "✗ Missing", description)
+            table.add_row(description, "✗ Not found", f"No {filename}")
             logger.warning("Configuration file missing", file=filename)
 
     console.print(table)
@@ -127,16 +124,16 @@ def status() -> None:
 @app.command()
 def configure_defaults(
     agent_type: str = typer.Option(
-        ..., help="Type of coding agent (claude-code, cursor)"
+        None, help="Type of coding agent (claude-code, cursor)"
     ),
     repo_path: str = typer.Option(".", help="Path to target repository"),
     template_type: str = typer.Option(
         None,
-        help="Configuration template to use (run with --help to see available templates)",
+        help="Configuration template to use (vibe_coder, software_engineer)",
     ),
     auto_detect: bool = typer.Option(
-        True,
-        "--auto-detect/--no-auto-detect",
+        False,
+        "--auto-detect",
         help="Auto-detect best template based on repository analysis",
     ),
     dry_run: bool = typer.Option(
@@ -148,28 +145,25 @@ def configure_defaults(
 ) -> None:
     """Configure coding agent default settings with best-practice templates.
 
-    This command analyzes your repository and applies optimal configuration settings
-    for your coding agent based on your project characteristics and team size.
+    This command applies optimal configuration settings for your coding agent
+    based on proven templates for different development scenarios.
 
-        Available Templates:
+    Available Templates:
 
-    • solo-developer: Streamlined for individual developers and rapid prototyping
-    • development-team: Optimized for 2-5 developers with CI/CD and code review
-    • enterprise-security: High-security for large teams and regulated environments
+    • vibe_coder: Fast iteration for solo developers and rapid prototyping
+    • software_engineer: Production-focused with security and team collaboration
 
     Examples:
 
     # List all available templates with details
     bob configure-defaults --list
 
-    # Auto-detect and apply best template
-    bob configure-defaults --agent-type cursor --repo-path .
-
-    # Use specific template
-    bob configure-defaults --agent-type claude-code --template-type development-team
+    # Apply specific template
+    bob configure-defaults --agent-type claude-code --template-type vibe_coder
+    bob configure-defaults --agent-type cursor --template-type software_engineer
 
     # Preview configuration without applying
-    bob configure-defaults --agent-type cursor --template-type solo-developer --dry-run
+    bob configure-defaults --agent-type cursor --template-type vibe_coder --dry-run
     """
     logger = get_logger(__name__)
 
@@ -178,11 +172,29 @@ def configure_defaults(
         agent_type=agent_type,
         repo_path=repo_path,
         template_type=template_type,
-        auto_detect=auto_detect,
         dry_run=dry_run,
     )
 
     try:
+        # List templates if requested
+        if list_templates:
+            _display_available_templates()
+            return
+
+        # Validate required parameters
+        if not agent_type:
+            console.print("[red]Error:[/red] --agent-type is required")
+            console.print("[dim]Supported types: claude-code, cursor[/dim]")
+            raise typer.Exit(1)
+
+        if not template_type:
+            console.print("[red]Error:[/red] --template-type is required")
+            console.print(
+                "[dim]Available templates: vibe_coder, software_engineer[/dim]"
+            )
+            console.print("[dim]Use --list to see detailed descriptions[/dim]")
+            raise typer.Exit(1)
+
         # Validate agent type
         supported_agents = ["claude-code", "cursor"]
         if agent_type not in supported_agents:
@@ -190,10 +202,16 @@ def configure_defaults(
             console.print(f"[dim]Supported types: {', '.join(supported_agents)}[/dim]")
             raise typer.Exit(1)
 
-        # List templates if requested
-        if list_templates:
-            _display_template_details()
-            return
+        # Validate template type
+        available_templates = ["vibe_coder", "software_engineer"]
+        if template_type not in available_templates:
+            console.print(
+                f"[red]Error:[/red] Unsupported template type: {template_type}"
+            )
+            console.print(
+                f"[dim]Available templates: {', '.join(available_templates)}[/dim]"
+            )
+            raise typer.Exit(1)
 
         # Validate repository path
         repo_path_obj = Path(repo_path).resolve()
@@ -203,89 +221,18 @@ def configure_defaults(
             )
             raise typer.Exit(1)
 
-        console.print(f"[cyan]Analyzing repository: {repo_path_obj}[/cyan]")
-
-        # TODO: Repository analysis functionality needs to be restored
-        # For now, use simple template selection
         console.print(
-            "[yellow]Note: Automatic repository analysis temporarily unavailable.[/yellow]"
+            f"[cyan]Configuring {agent_type} with {template_type} template...[/cyan]"
         )
-        console.print("[dim]Please specify --template-type explicitly[/dim]")
 
-        if not template_type:
-            console.print(
-                "[red]Error:[/red] Repository analysis unavailable. Please specify --template-type"
-            )
-            console.print(
-                "Available options: solo-developer, development-team, enterprise-security"
-            )
-            raise typer.Exit(1)
-
-        # Create a minimal analysis object for compatibility
-        class SimpleAnalysis:
-            def __init__(self) -> None:
-                self.tech_stack = {"python"}  # Default assumption
-                self.team_size = 1
-                self.repo_size = 100
-                self.security_level = "medium"
-                self.has_ci_cd = False
-                self.has_containers = False
-                self.has_microservices = False
-                self.package_managers: list[str] = []
-                self.frameworks: list[str] = []
-                self.recommended_template = "development-team"
-                self.confidence = 0.5
-
-        analysis = SimpleAnalysis()
-
-        # Display analysis results
-        _display_analysis_results(analysis)
-
-        # Determine template to use
-        if template_type:
-            # Use specified template
-            try:
-                template = get_template(template_type)
-                console.print(
-                    f"[green]Using specified template: {template.name}[/green]"
-                )
-            except ValueError as e:
-                console.print(f"[red]Error:[/red] {e}")
-                _display_template_details()
-                raise typer.Exit(1) from e
-        elif auto_detect:
-            # Auto-detection is temporarily unavailable
-            console.print(
-                "[red]Error:[/red] Auto-detection requires --template-type when analysis is unavailable"
-            )
-            console.print(
-                "Available options: solo-developer, development-team, enterprise-security"
-            )
-            raise typer.Exit(1)
-        else:
-            console.print(
-                "[red]Error:[/red] Either specify --template-type or enable --auto-detect"
-            )
-            raise typer.Exit(1)
-
-        # Generate configuration
-        config_content = generate_config_content(template, agent_type)
-
-        if dry_run:
-            # Preview mode
-            _display_config_preview(template, agent_type, config_content, analysis)
-        else:
-            # Apply configuration
-            _apply_configuration(
-                template, agent_type, config_content, repo_path_obj, analysis
-            )
+        # Apply configuration based on agent type
+        if agent_type == "claude-code":
+            _configure_claude_code(repo_path_obj, template_type, dry_run)
+        elif agent_type == "cursor":
+            _configure_cursor(repo_path_obj, template_type, dry_run)
 
         logger.info("Configure defaults command completed successfully")
 
-    except ValueError as e:
-        console.print(f"[red]Error:[/red] {e}")
-        logger.error("Configure defaults command failed", error=str(e))
-        raise typer.Exit(1) from e
     except Exception as e:
         console.print(f"[red]Unexpected error:[/red] {e}")
         logger.error(
@@ -294,110 +241,187 @@ def configure_defaults(
         raise typer.Exit(1) from e
 
 
-def _display_template_details() -> None:
-    """Display detailed information about all available templates."""
-    templates = list_templates()
+def _display_available_templates() -> None:
+    """Display information about available configuration templates."""
+    templates = ClaudeRulesManager.list_available_templates()
+
+    if not templates:
+        console.print("[yellow]No configuration templates found.[/yellow]")
+        return
 
     console.print("\n[bold cyan]Available Configuration Templates[/bold cyan]")
-    console.print("=" * 60)
 
-    for template in templates:
-        # Create template panel
-        content = Text()
-        content.append("Best for: ", style="bold")
-        content.append(f"{template.best_for}\n\n", style="dim")
-        content.append("Description: ", style="bold")
-        content.append(f"{template.description}\n\n", style="dim")
+    table = Table()
+    table.add_column("Template", style="cyan")
+    table.add_column("Description", style="white")
+    table.add_column("Best For", style="dim")
 
-        # Add key features
-        content.append("Key Features:\n", style="bold")
-        if template.name == "solo-developer":
-            features = [
-                "• Fast code-first mode",
-                "• Minimal confirmations",
-                "• Auto-formatting",
-                "• Quick dependency installation",
-                "• Optimized for speed",
-            ]
-        elif template.name == "development-team":
-            features = [
-                "• Plan-first approach",
-                "• Code quality checks",
-                "• Team collaboration",
-                "• Git commit templates",
-                "• Test automation",
-            ]
-        elif template.name == "enterprise-security":
-            features = [
-                "• Maximum security",
-                "• Audit logging",
-                "• Restricted permissions",
-                "• Compliance checks",
-                "• Approval workflows",
-            ]
+    for template_file in templates:
+        template_name = template_file.stem.replace("settings_", "")
+        try:
+            template_data = ClaudeRulesManager.load_settings_template(template_name)
+            info = template_data.get("_template_info", {})
+
+            table.add_row(
+                template_name,
+                info.get("description", "No description"),
+                info.get("best_for", "General use"),
+            )
+        except Exception as e:
+            table.add_row(
+                template_name, f"[red]Error loading template: {e}[/red]", "N/A"
+            )
+
+    console.print(table)
+    console.print(
+        "\n[dim]Use --agent-type and --template-type to apply a template.[/dim]"
+    )
+
+
+def _configure_claude_code(repo_path: Path, template_name: str, dry_run: bool) -> None:
+    """Configure Claude Code with the specified template."""
+    try:
+        # Load template
+        console.print(f"[cyan]Loading {template_name} template...[/cyan]")
+        template = ClaudeRulesManager.load_settings_template(template_name)
+
+        # Get adapter and apply configuration
+        adapter = AdapterFactory.create_adapter("claude-code", target_path=repo_path)
+        # Cast to ClaudeRulesManager since apply_settings_template is specific to Claude Code
+        if isinstance(adapter, ClaudeRulesManager):
+            adapter.apply_settings_template(template, dry_run=dry_run)
         else:
-            features = ["• General purpose configuration"]
+            raise TypeError("Expected ClaudeRulesManager adapter")
 
-        for feature in features:
-            content.append(f"{feature}\n", style="green")
+        if not dry_run:
+            console.print("[green]✓ Claude Code configuration completed![/green]")
 
-        panel = Panel(
-            content,
-            title=f"[bold yellow]{template.name}[/bold yellow]",
-            border_style="blue",
-            expand=False,
-        )
-        console.print(panel)
-        console.print()  # Add spacing
+    except Exception as e:
+        console.print(f"[red]Error configuring Claude Code:[/red] {e}")
+        raise
+
+
+def _configure_cursor(repo_path: Path, template_name: str, dry_run: bool) -> None:
+    """Configure Cursor with the specified template."""
+    try:
+        # Load template info
+        console.print(f"[cyan]Loading {template_name} template...[/cyan]")
+        template = ClaudeRulesManager.load_settings_template(template_name)
+        template_info = template.get("_template_info", {})
+
+        # Get adapter
+        adapter = AdapterFactory.create_adapter("cursor", target_path=repo_path)
+
+        # Handle template-specific behavior for Cursor
+        if template_name == "vibe_coder":
+            if dry_run:
+                console.print(
+                    f"\n[bold yellow]Dry Run - {template_name} template for Cursor[/bold yellow]"
+                )
+                console.print(
+                    f"[dim]Description: {template_info.get('description', 'N/A')}[/dim]"
+                )
+                console.print(
+                    "\n[yellow]This template requires no additional Cursor rules.[/yellow]"
+                )
+                console.print(
+                    "[dim]The vibe_coder template is designed for minimal restrictions.[/dim]"
+                )
+                console.print(
+                    "[dim]Since Cursor doesn't enforce command-level permissions,[/dim]"
+                )
+                console.print(
+                    "[dim]no additional configuration files are needed.[/dim]"
+                )
+            else:
+                console.print(
+                    f"\n[bold green]Applying {template_name} template for Cursor[/bold green]"
+                )
+                console.print(
+                    "[yellow]✓ No additional Cursor rules needed for this template.[/yellow]"
+                )
+                console.print(
+                    "[dim]The vibe_coder template is designed for minimal restrictions.[/dim]"
+                )
+                console.print(
+                    "[dim]Your Cursor environment is ready for fast iteration![/dim]"
+                )
+
+        elif template_name == "software_engineer":
+            if dry_run:
+                console.print(
+                    f"\n[bold yellow]Dry Run - {template_name} template for Cursor[/bold yellow]"
+                )
+                console.print(
+                    f"[dim]Description: {template_info.get('description', 'N/A')}[/dim]"
+                )
+                console.print("\n[yellow]Would install security protections:[/yellow]")
+                console.print(
+                    "  • AI safety guidelines (.cursor/rules/bash_deny_list.mdc)"
+                )
+                console.print("  • Shell command protection (bash_protection.sh)")
+                console.print("  • Safe AI commands (ai-commands.json)")
+            else:
+                # Apply security protections using existing rules manager
+                console.print(
+                    f"\n[bold green]Applying {template_name} template for Cursor[/bold green]"
+                )
+                # Cast to CursorRulesManager since configure_full_protection is specific to Cursor
+                if isinstance(adapter, CursorRulesManager):
+                    results = adapter.configure_full_protection()
+                else:
+                    raise TypeError("Expected CursorRulesManager adapter")
+
+                console.print(
+                    "\n[bold cyan]Security Configuration Applied:[/bold cyan]"
+                )
+                if results.get("ai_rules"):
+                    console.print("  ✅ AI safety guidelines installed")
+                if results.get("ai_commands"):
+                    console.print("  ✅ Safe AI commands configured")
+                if results.get("shell_protection", {}).get("protection_installed"):
+                    console.print("  ✅ Shell protection enabled")
+
+        if not dry_run:
+            console.print("[green]✓ Cursor configuration completed![/green]")
+
+    except Exception as e:
+        console.print(f"[red]Error configuring Cursor:[/red] {e}")
+        raise
 
 
 def _display_analysis_results(analysis: Any) -> None:
     """Display repository analysis results."""
     console.print("\n[bold cyan]Repository Analysis Results[/bold cyan]")
+    console.print("=" * 40)
 
-    # Create analysis table
-    table = Table(show_header=True, header_style="bold magenta")
-    table.add_column("Characteristic", style="cyan")
-    table.add_column("Value", style="green")
-    table.add_column("Impact", style="dim")
+    # Tech stack
+    if hasattr(analysis, "tech_stack") and analysis.tech_stack:
+        tech_list = ", ".join(analysis.tech_stack)
+        console.print(f"[bold]Tech Stack:[/bold] {tech_list}")
 
-    table.add_row(
-        "Technology Stack",
-        ", ".join(analysis.tech_stack) if analysis.tech_stack else "Mixed/Unknown",
-        "Determines tool permissions and commands",
-    )
+    # Team size
+    if hasattr(analysis, "team_size"):
+        console.print(f"[bold]Estimated Team Size:[/bold] {analysis.team_size}")
 
-    table.add_row(
-        "Team Size",
-        str(analysis.team_size),
-        "Influences collaboration features and approval workflows",
-    )
+    # Repository characteristics
+    if hasattr(analysis, "repo_size"):
+        console.print(f"[bold]Repository Size:[/bold] ~{analysis.repo_size} files")
 
-    table.add_row(
-        "Repository Size",
-        f"{analysis.repo_size} code files",
-        "Affects timeout settings and operation modes",
-    )
+    if hasattr(analysis, "security_level"):
+        console.print(f"[bold]Security Level:[/bold] {analysis.security_level}")
 
-    table.add_row(
-        "Security Level",
-        analysis.security_level.title(),
-        "Determines permission restrictions and audit requirements",
-    )
+    # Features detected
+    features = []
+    if hasattr(analysis, "has_ci_cd") and analysis.has_ci_cd:
+        features.append("CI/CD")
+    if hasattr(analysis, "has_containers") and analysis.has_containers:
+        features.append("Containers")
+    if hasattr(analysis, "has_microservices") and analysis.has_microservices:
+        features.append("Microservices")
 
-    table.add_row(
-        "CI/CD Present",
-        "Yes" if analysis.has_ci_cd else "No",
-        "Enables integration with automated workflows",
-    )
-
-    table.add_row(
-        "Containers",
-        "Yes" if analysis.has_containers else "No",
-        "Adds container-specific commands and integrations",
-    )
-
-    console.print(table)
+    if features:
+        console.print(f"[bold]Features Detected:[/bold] {', '.join(features)}")
 
     # Display package managers and frameworks
     if analysis.package_managers:
@@ -417,33 +441,31 @@ def _display_config_preview(
     )
     console.print("=" * 60)
 
-    # Show what files would be created/modified
+    # Show template info
+    console.print(f"[bold]Template:[/bold] {template.name}")
+    console.print(f"[bold]Agent Type:[/bold] {agent_type}")
+    console.print(f"[bold]Description:[/bold] {template.description}")
+
     if agent_type == "claude-code":
         files_to_modify = [".claude-code-config.json"]
-    else:  # cursor
+    else:
         files_to_modify = [".cursorrules"]
 
-    console.print("[bold]Files that would be created/modified:[/bold]")
-    for file_path in files_to_modify:
-        console.print(f"  • {file_path}")
+    console.print("\n[bold]Files to be created/modified:[/bold]")
+    for file in files_to_modify:
+        console.print(f"  • {file}")
 
     console.print("\n[bold]Configuration Content Preview:[/bold]")
 
-    # Limit preview to first 30 lines to avoid overwhelming output
+    # Show first few lines of config
     lines = config_content.split("\n")
-    preview_lines = lines[:30]
-    if len(lines) > 30:
-        preview_lines.append("... (truncated)")
+    preview_lines = lines[:15] if len(lines) > 15 else lines
 
-    preview_content = "\n".join(preview_lines)
+    for line in preview_lines:
+        console.print(f"  {line}")
 
-    panel = Panel(
-        preview_content,
-        title=f"[bold]{files_to_modify[0]}[/bold]",
-        border_style="yellow",
-        expand=False,
-    )
-    console.print(panel)
+    if len(lines) > 15:
+        console.print(f"  ... ({len(lines) - 15} more lines)")
 
     # Show recommendation confidence
     console.print(
@@ -468,17 +490,17 @@ def _apply_configuration(
             config_file.write_text(config_content)
             console.print(f"[green]✓[/green] Created {config_file}")
 
-        else:  # cursor
+        elif agent_type == "cursor":
             config_file = repo_path / ".cursorrules"
             config_file.write_text(config_content)
             console.print(f"[green]✓[/green] Created {config_file}")
 
-        # Create documentation file
+        # Generate documentation
         doc_content = f"""# Coding Agent Configuration Applied
 
-## Template: {template.name}
-**Applied:** {datetime.now().isoformat()}
+**Template:** {template.name}
 **Agent Type:** {agent_type}
+**Applied:** {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
 
 ## Template Description
 {template.description}
@@ -486,18 +508,12 @@ def _apply_configuration(
 ## Best For
 {template.best_for}
 
-## Repository Analysis
-- **Technology Stack:** {", ".join(analysis.tech_stack) if analysis.tech_stack else "Mixed/Unknown"}
-- **Team Size:** {analysis.team_size}
-- **Repository Size:** {analysis.repo_size} code files
-- **Security Level:** {analysis.security_level.title()}
-- **CI/CD:** {"Yes" if analysis.has_ci_cd else "No"}
-- **Containers:** {"Yes" if analysis.has_containers else "No"}
+## Configuration Details
+- Confidence Score: {analysis.confidence:.1%}
+- Repository Analysis: Completed
+- Tech Stack: {", ".join(analysis.tech_stack) if hasattr(analysis, "tech_stack") else "Unknown"}
 
-## Recommendation Confidence
-{analysis.confidence:.1%}
-
-## Usage Guidelines
+## Usage Notes
 Refer to the {agent_type} documentation for how to use these configuration settings.
 
 ## Next Steps
@@ -507,10 +523,9 @@ Refer to the {agent_type} documentation for how to use these configuration setti
 
 Generated by bob-the-engineer configure-defaults
 """
-
         doc_file = repo_path / f"AGENT_CONFIG_{agent_type.upper()}.md"
         doc_file.write_text(doc_content)
-        console.print(f"[green]✓[/green] Created {doc_file}")
+        console.print(f"[green]✓[/green] Created documentation: {doc_file}")
 
         console.print("\n[bold green]Configuration successfully applied![/bold green]")
         console.print(
@@ -540,13 +555,9 @@ def configure_workflows(
     """Configure development workflow templates as coding agent commands.
 
     This command configures proven development workflows tailored to your coding agent.
+    Each workflow is installed as a specialized command that guides development practices.
 
-    Available workflows:
-    • spec-driven: 6-phase iterative development
-    • tdd: Test-first development with enforcement
-    • code-review: Multi-aspect parallel review
-    • research: Parallel information gathering
-    • triage: Context gathering and problem diagnosis
+    Available workflows: spec-driven, tdd, code-review, research, triage
 
     Examples:
     bob configure-workflows --workflows spec-driven,tdd --agent-type claude-code
@@ -564,7 +575,7 @@ def configure_workflows(
 
     try:
         # Validate agent type
-        supported_agents = AdapterFactory.get_supported_agents()
+        supported_agents = ["claude-code", "cursor"]
         if agent_type not in supported_agents:
             console.print(f"[red]Error:[/red] Unsupported agent type: {agent_type}")
             console.print(f"[dim]Supported types: {', '.join(supported_agents)}[/dim]")
@@ -578,10 +589,8 @@ def configure_workflows(
             )
             raise typer.Exit(1)
 
-        # Parse workflows list
-        workflow_list = [w.strip() for w in workflows.split(",") if w.strip()]
-
-        # Validate workflow names
+        # Parse workflows
+        workflow_list = [w.strip() for w in workflows.split(",")]
         available_workflows = [
             "spec-driven",
             "tdd",
@@ -589,6 +598,8 @@ def configure_workflows(
             "research",
             "triage",
         ]
+
+        # Validate workflows
         invalid_workflows = [w for w in workflow_list if w not in available_workflows]
         if invalid_workflows:
             console.print(
@@ -602,7 +613,7 @@ def configure_workflows(
         console.print(f"[cyan]Configuring workflows for {agent_type}...[/cyan]")
 
         # Create adapter and configure workflows
-        adapter = AdapterFactory.create_adapter(agent_type, repo_path_obj)
+        adapter = AdapterFactory.create_adapter(agent_type, target_path=repo_path_obj)
 
         if dry_run:
             console.print(
@@ -615,13 +626,14 @@ def configure_workflows(
             )
 
             if agent_type == "claude-code":
-                console.print("[dim]Files that would be created:[/dim]")
+                console.print("[dim]Would create commands in .claude/commands/[/dim]")
                 for workflow in workflow_list:
-                    console.print(f"  • .claude/commands/{workflow}.md")
-            else:  # cursor
-                console.print("[dim]Files that would be created:[/dim]")
+                    console.print(f"  • {workflow}.md")
+            else:
+                console.print("[dim]Would create commands in .cursor/commands/[/dim]")
                 for workflow in workflow_list:
-                    console.print(f"  • .cursor/commands/{workflow}.md")
+                    console.print(f"  • {workflow}.md")
+
         else:
             # Configure workflows (need to implement this in adapter)
             try:
@@ -667,18 +679,18 @@ def configure_mcp(
     """Configure Model Context Protocol servers for enhanced capabilities.
 
     This command sets up MCP servers by writing JSON configuration to the appropriate file:
-    • For claude-code: Updates .claude/settings.json (merged with existing settings)
-    • For cursor: Creates/updates .cursor/mcp.json
+    - Claude Code: Updates .claude/settings.json
+    - Cursor: Creates .cursor/mcp.json
 
     Examples:
     # Configure GitHub MCP server for Claude Code
     bob configure-mcp --agent-type claude-code --config '{"mcpServers": {"github": {"command": "npx", "args": ["@modelcontextprotocol/server-github"]}}}'
 
     # Configure multiple servers for Cursor
-    bob configure-mcp --agent-type cursor --config '{"servers": {"github": {...}, "postgres": {...}}}'
+    bob configure-mcp --agent-type cursor --config '{"servers": {"github": {"url": "https://api.github.com"}}}'
 
-    # Preview configuration
-    bob configure-mcp --agent-type claude-code --config '{"mcpServers": {...}}' --dry-run
+    # Preview configuration with valid JSON
+    bob configure-mcp --agent-type claude-code --config '{"mcpServers": {"postgres": {"command": "npx", "args": ["@modelcontextprotocol/server-postgres"]}}}' --dry-run
     """
     logger = get_logger(__name__)
 
@@ -692,7 +704,7 @@ def configure_mcp(
 
     try:
         # Validate agent type
-        supported_agents = AdapterFactory.get_supported_agents()
+        supported_agents = ["claude-code", "cursor"]
         if agent_type not in supported_agents:
             console.print(f"[red]Error:[/red] Unsupported agent type: {agent_type}")
             console.print(f"[dim]Supported types: {', '.join(supported_agents)}[/dim]")
@@ -711,16 +723,26 @@ def configure_mcp(
             mcp_config = json.loads(config)
         except json.JSONDecodeError as e:
             console.print(f"[red]Error:[/red] Invalid JSON configuration: {e}")
+            console.print(
+                "[dim]Note: Use proper JSON syntax, not {...} placeholders[/dim]"
+            )
+            console.print("[dim]Example valid JSON:[/dim]")
+            if agent_type == "claude-code":
+                console.print(
+                    '[dim]  \'{"mcpServers": {"postgres": {"command": "npx", "args": ["@modelcontextprotocol/server-postgres"]}}}\'[/dim]'
+                )
+            else:
+                console.print(
+                    '[dim]  \'{"servers": {"postgres": {"url": "postgresql://localhost"}}}\'[/dim]'
+                )
             raise typer.Exit(1) from e
 
         console.print(f"[cyan]Configuring MCP servers for {agent_type}...[/cyan]")
 
-        # Determine target file based on agent type
+        # Determine configuration approach based on agent
         if agent_type == "claude-code":
-            target_file = repo_path_obj / ".claude" / "settings.json"
             config_description = ".claude/settings.json (merged with existing settings)"
         else:  # cursor
-            target_file = repo_path_obj / ".cursor" / "mcp.json"
             config_description = ".cursor/mcp.json"
 
         if dry_run:
@@ -731,13 +753,13 @@ def configure_mcp(
 
             console.print("\n[bold]Configuration to apply:[/bold]")
             formatted_config = json.dumps(mcp_config, indent=2)
-            panel = Panel(
-                formatted_config,
-                title="[bold]MCP Configuration[/bold]",
-                border_style="yellow",
-                expand=False,
+            console.print(
+                Panel(
+                    formatted_config,
+                    title="[bold]MCP Configuration[/bold]",
+                    border_style="blue",
+                )
             )
-            console.print(panel)
 
             console.print(
                 "\n[yellow]This is a preview. Use --no-dry-run to apply the configuration.[/yellow]"
@@ -745,35 +767,35 @@ def configure_mcp(
         else:
             # Apply configuration
             if agent_type == "claude-code":
-                # Merge with existing settings
-                claude_dir = repo_path_obj / ".claude"
-                claude_dir.mkdir(parents=True, exist_ok=True)
+                # For Claude Code, merge with existing settings
+                settings_file = repo_path_obj / ".claude" / "settings.json"
 
-                if target_file.exists():
-                    try:
-                        with open(target_file, encoding="utf-8") as f:
-                            existing_settings = json.load(f)
-                    except (json.JSONDecodeError, FileNotFoundError):
-                        existing_settings = {}
+                # Load existing settings
+                if settings_file.exists():
+                    with open(settings_file) as f:
+                        existing_settings = json.load(f)
                 else:
                     existing_settings = {}
+                    # Ensure directory exists
+                    settings_file.parent.mkdir(parents=True, exist_ok=True)
 
                 # Merge MCP configuration into existing settings
                 existing_settings.update(mcp_config)
 
-                with open(target_file, "w", encoding="utf-8") as f:
+                # Write updated settings
+                with open(settings_file, "w") as f:
                     json.dump(existing_settings, f, indent=2)
 
             else:  # cursor
                 # Write MCP config to dedicated file
                 cursor_dir = repo_path_obj / ".cursor"
                 cursor_dir.mkdir(parents=True, exist_ok=True)
+                mcp_file = cursor_dir / "mcp.json"
 
-                with open(target_file, "w", encoding="utf-8") as f:
+                with open(mcp_file, "w") as f:
                     json.dump(mcp_config, f, indent=2)
 
-            console.print("[green]✓ MCP configuration applied successfully![/green]")
-            console.print(f"[dim]Updated: {target_file}[/dim]")
+            console.print("✓ MCP configuration applied successfully!")
 
             # Show what was configured
             console.print("\n[bold cyan]Configuration Applied:[/bold cyan]")
@@ -811,28 +833,29 @@ def configure_supervisor(
 ) -> None:
     """Configure coding agent supervisor guards and hooks (Claude Code only).
 
-    This command sets up guards and hooks to prevent common AI coding mistakes.
+    Supervisor guards provide automated quality gates and safety checks during development.
+    They run automatically based on configured triggers and conditions.
 
     Available guards:
-    • file-guard: Protects sensitive files from AI access
-    • tdd-guard: Enforces test-first development
-    • self-review: Catches implementation shortcuts
+    - file-guard: Prevents access to sensitive files and directories
+    - tdd-guard: Enforces test-driven development practices
+    - self-review: Triggers periodic self-review of code changes
 
     Examples:
-    bob install-supervisor --guards file-guard,tdd-guard
-    bob install-supervisor --guards self-review --dry-run
+    bob configure-supervisor --guards file-guard,tdd-guard
+    bob configure-supervisor --guards self-review --dry-run
     """
     logger = get_logger(__name__)
 
     logger.info(
-        "Install supervisor command invoked",
+        "Configure supervisor command invoked",
         guards=guards,
         repo_path=repo_path,
         dry_run=dry_run,
     )
 
     try:
-        # This command only works with Claude Code
+        # This is Claude Code specific
         agent_type = "claude-code"
 
         # Validate repository path
@@ -843,11 +866,11 @@ def configure_supervisor(
             )
             raise typer.Exit(1)
 
-        # Parse guards list
-        guard_list = [g.strip() for g in guards.split(",") if g.strip()]
-
-        # Validate guard names
+        # Parse guards
+        guard_list = [g.strip() for g in guards.split(",")]
         available_guards = ["file-guard", "tdd-guard", "self-review"]
+
+        # Validate guards
         invalid_guards = [g for g in guard_list if g not in available_guards]
         if invalid_guards:
             console.print(
@@ -858,8 +881,8 @@ def configure_supervisor(
 
         console.print("[cyan]Configuring supervisor guards for Claude Code...[/cyan]")
 
-        # Create adapter and install supervisor
-        adapter = AdapterFactory.create_adapter(agent_type, repo_path_obj)
+        # Create adapter
+        adapter = AdapterFactory.create_adapter(agent_type, target_path=repo_path_obj)
 
         if dry_run:
             console.print(
@@ -869,6 +892,7 @@ def configure_supervisor(
             console.print(f"[dim]Guards to configure: {', '.join(guard_list)}[/dim]")
             console.print("[dim]Configuration file to update:[/dim]")
             console.print("  • .claude/settings.json (hooks section)")
+
         else:
             # Configure supervisor (need to implement this in adapter)
             try:
@@ -918,26 +942,15 @@ def doctor(
 ) -> None:
     """Diagnose and optionally repair installation issues.
 
-    This command checks for common installation problems and can attempt repairs.
-
-    Diagnostics include:
-    • File permissions and directory structure
-    • Configuration file validity
-    • Agent-specific setup verification
-    • Template installation completeness
+    This command checks for common configuration problems and can attempt
+    automatic repairs where possible.
 
     Examples:
-    bob doctor --repo-path .
-    bob doctor --repair --agent-type claude-code
+    bob doctor
+    bob doctor --agent-type claude-code --repair
     """
     logger = get_logger(__name__)
-
-    logger.info(
-        "Doctor command invoked",
-        repair=repair,
-        repo_path=repo_path,
-        agent_type=agent_type,
-    )
+    logger.info("Doctor command invoked", repair=repair, agent_type=agent_type)
 
     try:
         # Validate repository path
@@ -948,9 +961,9 @@ def doctor(
             )
             raise typer.Exit(1)
 
-        # If agent_type specified, validate it
+        # Validate agent type if provided
         if agent_type:
-            supported_agents = AdapterFactory.get_supported_agents()
+            supported_agents = ["claude-code", "cursor"]
             if agent_type not in supported_agents:
                 console.print(f"[red]Error:[/red] Unsupported agent type: {agent_type}")
                 console.print(
@@ -963,58 +976,23 @@ def doctor(
         issues_found = []
         repairs_made = []
 
-        # Basic repository checks
-        console.print("\n[bold]Basic Repository Checks[/bold]")
-
-        # Check if it's a git repository
-        git_dir = repo_path_obj / ".git"
-        if git_dir.exists():
-            console.print("  ✓ Git repository detected")
-        else:
-            console.print("  ⚠ Not a git repository")
-            issues_found.append("not_git_repo")
-
-        # Check for common config files
-        config_files = [
-            ("pyproject.toml", "Python project config"),
-            ("package.json", "Node.js project config"),
-            ("README.md", "Project documentation"),
-        ]
-
-        for filename, description in config_files:
-            file_path = repo_path_obj / filename
-            if file_path.exists():
-                console.print(f"  ✓ {filename} found")
-            else:
-                console.print(f"  - {filename} not found ({description})")
-
-        # Agent-specific checks
-        if not agent_type:
-            # Check both agents
-            agents_to_check = AdapterFactory.get_supported_agents()
-        else:
-            agents_to_check = [agent_type]
+        # Check agent-specific issues
+        agents_to_check = [agent_type] if agent_type else ["claude-code", "cursor"]
 
         for agent in agents_to_check:
-            console.print(f"\n[bold]{agent.title()} Agent Checks[/bold]")
+            console.print(
+                f"\n[bold yellow]Checking {agent} configuration...[/bold yellow]"
+            )
 
             if agent == "claude-code":
-                # Check Claude Code setup
-                claude_file = repo_path_obj / "CLAUDE.md"
                 claude_settings = repo_path_obj / ".claude" / "settings.json"
                 claude_commands_dir = repo_path_obj / ".claude" / "commands"
 
-                if claude_file.exists():
-                    console.print("  ✓ CLAUDE.md rules file found")
-                else:
-                    console.print("  ⚠ CLAUDE.md rules file missing")
-                    issues_found.append("claude_rules_missing")
-
                 if claude_settings.exists():
                     console.print("  ✓ .claude/settings.json found")
-                    # TODO: Validate JSON format
                 else:
-                    console.print("  - .claude/settings.json not found")
+                    console.print("  ⚠ .claude/settings.json missing")
+                    issues_found.append("claude_settings_missing")
 
                 if claude_commands_dir.exists():
                     commands = list(claude_commands_dir.glob("*.md"))
@@ -1024,11 +1002,16 @@ def doctor(
                 else:
                     console.print("  - .claude/commands/ directory not found")
 
-            elif agent == "cursor":
-                # Check Cursor setup
+            else:  # cursor
+                cursor_rules_file = repo_path_obj / ".cursorrules"
                 cursor_rules_dir = repo_path_obj / ".cursor" / "rules"
-                cursor_settings = repo_path_obj / ".cursor" / "settings.json"
                 cursor_commands_dir = repo_path_obj / ".cursor" / "commands"
+
+                if cursor_rules_file.exists():
+                    console.print("  ✓ .cursorrules file found")
+                else:
+                    console.print("  ⚠ .cursorrules file missing")
+                    issues_found.append("cursor_rules_missing")
 
                 if cursor_rules_dir.exists():
                     rules = list(cursor_rules_dir.glob("*.mdc"))
@@ -1037,13 +1020,6 @@ def doctor(
                     )
                 else:
                     console.print("  ⚠ .cursor/rules/ directory missing")
-                    issues_found.append("cursor_rules_missing")
-
-                if cursor_settings.exists():
-                    console.print("  ✓ .cursor/settings.json found")
-                    # TODO: Validate JSON format
-                else:
-                    console.print("  - .cursor/settings.json not found")
 
                 if cursor_commands_dir.exists():
                     commands = list(cursor_commands_dir.glob("*.md"))
@@ -1053,13 +1029,15 @@ def doctor(
                 else:
                     console.print("  - .cursor/commands/ directory not found")
 
-        # Repair issues if requested
+        # Attempt repairs if requested
         if repair and issues_found:
-            console.print("\n[bold yellow]Repair suggestions...[/bold yellow]")
+            console.print(
+                f"\n[bold green]Attempting to repair {len(issues_found)} issues...[/bold green]"
+            )
 
             for issue in issues_found:
-                if issue == "claude_rules_missing":
-                    console.print("  Missing CLAUDE.md rules file")
+                if issue == "claude_settings_missing":
+                    console.print("  Suggested fix:")
                     console.print(
                         "    Suggested fix: Run 'bob configure-defaults --agent-type claude-code --template-type development-team'"
                     )
@@ -1069,7 +1047,7 @@ def doctor(
                     repairs_made.append("claude_rules_suggestion")
 
                 elif issue == "cursor_rules_missing":
-                    console.print("  Missing .cursor/rules/ directory")
+                    console.print("  Suggested fix:")
                     console.print(
                         "    Suggested fix: Run 'bob configure-defaults --agent-type cursor --template-type development-team'"
                     )
@@ -1079,25 +1057,26 @@ def doctor(
                     repairs_made.append("cursor_rules_suggestion")
 
         # Summary
-        console.print("\n[bold]Summary[/bold]")
-        if issues_found:
-            console.print(f"  Issues found: {len(issues_found)}")
-            if repair:
-                console.print(f"  Repair suggestions provided: {len(repairs_made)}")
-            else:
-                console.print("  Run with --repair to see suggested fixes")
+        if not issues_found:
+            console.print(
+                "\n[bold green]✓ No issues found! Your setup looks good.[/bold green]"
+            )
         else:
-            console.print("  ✓ No issues found")
+            console.print(
+                f"\n[bold yellow]Found {len(issues_found)} issues[/bold yellow]"
+            )
+            if repair:
+                console.print(
+                    f"[dim]Suggested {len(repairs_made)} repair actions[/dim]"
+                )
+            else:
+                console.print("[dim]Run with --repair to see suggested fixes[/dim]")
 
         logger.info("Doctor command completed successfully")
 
-    except ValueError as e:
+    except Exception as e:
         console.print(f"[red]Error:[/red] {e}")
         logger.error("Doctor command failed", error=str(e))
-        raise typer.Exit(1) from e
-    except Exception as e:
-        console.print(f"[red]Unexpected error:[/red] {e}")
-        logger.error("Doctor command failed with unexpected error", error=str(e))
         raise typer.Exit(1) from e
 
 
@@ -1117,19 +1096,20 @@ def init(
     subagent: str | None = typer.Option(None, help="Install specific subagent only"),
     workflow: str | None = typer.Option(None, help="Install specific workflow only"),
 ) -> None:
-    """Initialize coding agent environment with subagents and workflows."""
-    logger = get_logger(__name__)
+    """Initialize bob-the-engineer in your repository.
 
-    logger.info(
-        "Init command invoked",
-        agent_type=agent_type,
-        target_path=target_path,
-        dry_run=dry_run,
-        subagents_only=subagents_only,
-        workflows_only=workflows_only,
-        subagent=subagent,
-        workflow=workflow,
-    )
+    This command sets up the necessary files and configurations for your
+    chosen coding agent, installing subagents and workflows as specified.
+
+    Examples:
+    bob init                                    # Full setup with Claude Code
+    bob init --agent-type cursor               # Full setup with Cursor
+    bob init --subagents-only                  # Install all subagents only
+    bob init --subagent configure-defaults     # Install specific subagent
+    bob init --workflows-only --agent-type cursor  # Install workflows for Cursor
+    """
+    logger = get_logger(__name__)
+    logger.info("Init command invoked", agent_type=agent_type, target_path=target_path)
 
     try:
         # Validate agent type
@@ -1147,32 +1127,15 @@ def init(
             )
             raise typer.Exit(1)
 
-        # Initialize template engine
+        # Determine what to install
+        install_subagents = not workflows_only or subagents_only or subagent
+        install_workflows = not subagents_only or workflows_only or workflow
+
+        # Get available items
         templates_dir = Path(__file__).parent.parent / "templates"
         template_engine = TemplateEngine(templates_dir)
-
-        # Determine what to install
-        install_subagents = not workflows_only
-        install_workflows = not subagents_only
-
-        # If specific items are requested, only install those
-        if subagent or workflow:
-            install_subagents = bool(subagent)
-            install_workflows = bool(workflow)
-
-        # Get available subagents and workflows
-        available_subagents = [
-            "build_test_run",
-            "configure_defaults",
-            "configure_mcp",
-            "configure_rules",
-            "configure_supervisor",
-            "detect_conflicting_instructions",
-            "improve_code_quality_checks",
-            "improve_debuggability",
-        ]
-
-        available_workflows = ["code-review", "spec-driven", "tdd"]
+        available_subagents = template_engine.list_available_subagents()
+        available_workflows = template_engine.list_available_workflows()
 
         # Filter to specific items if requested
         subagents_to_install = (
@@ -1183,9 +1146,8 @@ def init(
         )
 
         if dry_run:
-            # Preview mode
-            console.print(f"\n[cyan]Preview initialization for {agent_type}:[/cyan]")
-            console.print("[dim]" + "=" * 80 + "[/dim]")
+            console.print(f"[yellow]Dry run for {agent_type} initialization[/yellow]")
+            console.print(f"[dim]Target directory: {repo_path_obj}[/dim]")
 
             if subagents_to_install:
                 console.print(
@@ -1207,6 +1169,8 @@ def init(
             )
         else:
             # Initialize the coding agent environment
+            console.print(f"[cyan]Initializing {agent_type} environment...[/cyan]")
+
             all_output_paths = []
 
             # Install subagents
@@ -1223,7 +1187,6 @@ def init(
                         console.print(f"  [green]✓[/green] {subagent_name}")
                     except Exception as e:
                         console.print(f"  [red]✗[/red] {subagent_name}: {e}")
-                        continue
 
             # Install workflows
             if workflows_to_install:
@@ -1239,7 +1202,6 @@ def init(
                         console.print(f"  [green]✓[/green] {workflow_name}")
                     except Exception as e:
                         console.print(f"  [red]✗[/red] {workflow_name}: {e}")
-                        continue
 
             # Success summary
             if all_output_paths:
