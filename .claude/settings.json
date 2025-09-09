@@ -34,7 +34,7 @@
       "Bash(awk:*)",
       "Bash(perl:*)"
     ],
-    "defaultMode": "allowEdits"
+    "defaultMode": "acceptEdits"
   },
   "env": {
     "BASH_DEFAULT_TIMEOUT_MS": "60000",
