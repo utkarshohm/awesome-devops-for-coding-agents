@@ -93,21 +93,6 @@ class BaseAdapter(ABC):
         """
         pass
 
-    @abstractmethod
-    def install_supervisor(self, guards: list[str]) -> Path:
-        """Install supervisor guards and hooks (Claude Code only).
-
-        Args:
-            guards: List of guard names to install
-
-        Returns:
-            Path to the updated configuration file
-
-        Raises:
-            NotImplementedError: For agents that don't support supervision
-        """
-        pass
-
     def validate_environment(self) -> bool:
         """Validate that the target environment is suitable for this adapter.
 

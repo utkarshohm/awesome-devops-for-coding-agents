@@ -207,20 +207,6 @@ class CursorRulesManager(BaseAdapter):
 
         return settings_file
 
-    def install_supervisor(self, guards: list[str]) -> Path:
-        """Install supervisor guards and hooks (not supported for Cursor).
-
-        Args:
-            guards: List of guard names to install
-
-        Returns:
-            Path to the updated configuration file
-
-        Raises:
-            NotImplementedError: Cursor doesn't support supervision hooks
-        """
-        raise NotImplementedError("Supervisor guards are not supported for Cursor")
-
     def _generate_workflow_command(self, workflow_name: str) -> str:
         """Generate a basic workflow command template for Cursor.
 

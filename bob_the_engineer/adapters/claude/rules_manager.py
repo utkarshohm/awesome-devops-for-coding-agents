@@ -153,46 +153,6 @@ class ClaudeRulesManager(BaseAdapter):
 
         return settings_file
 
-    def install_supervisor(self, guards: list[str]) -> Path:
-        """Install supervisor guards and hooks for Claude Code.
-
-        Args:
-            guards: List of guard names to install
-
-        Returns:
-            Path to the updated configuration file
-        """
-        # Supervisor configuration for Claude Code
-        hooks_config: dict[str, Any] = {"hooks": {"preToolUse": []}}
-
-        for guard in guards:
-            if guard == "file-guard":
-                hooks_config["hooks"]["preToolUse"].append(
-                    {
-                        "name": "file-guard",
-                        "script": "bob-the-engineer guard-file-access",
-                        "condition": "${CLAUDE_MODE} != 'plan'",
-                    }
-                )
-            elif guard == "tdd-guard":
-                hooks_config["hooks"]["preToolUse"].append(
-                    {
-                        "name": "tdd-guard",
-                        "script": "bob-the-engineer guard-tdd",
-                        "condition": "${BOB_TDD_ENABLED} != 'false'",
-                    }
-                )
-            elif guard == "self-review":
-                hooks_config["hooks"]["postResponse"] = [
-                    {
-                        "name": "self-review",
-                        "script": "bob-the-engineer guard-self-review",
-                        "condition": "Math.random() < 0.1",  # 10% chance
-                    }
-                ]
-
-        return self.configure_settings(hooks_config)
-
     @staticmethod
     def load_settings_template(template_name: str) -> dict[str, Any]:
         """Load a Claude Code settings template from the templates directory."""

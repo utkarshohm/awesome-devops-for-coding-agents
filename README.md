@@ -20,7 +20,6 @@ Bob the Engineer transforms your AI coding assistant into a DevOps powerhouse by
 2. **`build-test-run`**: Validate and resolve failures in feedback mechanisms (build, test, lint, run) to start using coding agents
 3. [wip]**`configure-defaults`**: Auto-detect repository characteristics and apply optimal coding agent settings like allowed and denied bash commands based on your organizational context
 4. **`configure-mcp`**: Set up necessary MCP servers and find servers relevant to your code
-5. [wip]**`configure-supervisor`**: Install guards using Claude Code hooks to agentically catch common mistakes coding agents make and give feedback to them in real-time, so that you are not repeating yourself again and again
 6. **`configure-coding-workflows`**: Install the coding workflows as first class commands
 7. [wip]**`detect-conflicting-instructions`**: Find and resolve contradictory docs, configurations, code blocks that can confuse coding agents
 8. [wip]**`improve-code-quality-checks`**: Strengthen linting, formatting, code cov checks to provide quicker feedback to coding agents
@@ -59,7 +58,6 @@ The following commands are executed by the workflows/agents and don't need to in
 bob-the-engineer configure-defaults # Apply best-practice templates (solo/team/enterprise)
 bob-the-engineer configure-workflows # Install development workflow templates
 bob-the-engineer configure-mcp      # Configure Model Context Protocol servers
-bob-the-engineer configure-supervisor # Set up supervisor guards (Claude Code only)
 ```
 
 ### 🏗 Architecture
@@ -137,12 +135,6 @@ bob-the-engineer configure-mcp --agent-type claude-code \
   --config '{"mcpServers": {"github": {"command": "npx", "args": ["@modelcontextprotocol/server-github"]}}}'
 ```
 
-### Installing Supervisor Guards
-
-```bash
-# Install TDD and file protection guards
-bob-the-engineer configure-supervisor --guards tdd-guard,file-guard
-```
 
 ### Diagnosing Issues
 
