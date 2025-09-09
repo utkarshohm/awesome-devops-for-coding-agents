@@ -1,7 +1,0 @@
-{
-  "cursor.chat.model": "claude-3-5-sonnet",
-  "cursor.chat.model.temperature": 0.3,
-  "cursor.chat.model.maxTokens": 4096,
-  "files.autoSave": "afterDelay",
-  "editor.formatOnSave": true
-}

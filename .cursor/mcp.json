@@ -1,8 +1,11 @@
 {
-  "servers": {
-    "context7": {
-      "command": "npx",
-      "args": ["-y", "@upstash/context7-mcp"]
+  "mcpServers": {
+    "Context7": {
+      "url": "https://mcp.context7.com/mcp",
+      "headers": {}
+    },
+    "deepwiki": {
+      "url": "https://mcp.deepwiki.com/mcp"
     }
   }
 }
