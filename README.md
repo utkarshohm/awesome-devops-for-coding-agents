@@ -18,12 +18,12 @@ Bob the Engineer transforms your AI coding assistant into a DevOps powerhouse by
 
 1. **`configure-rules`**: Generate agent-specific rule files (CLAUDE.md or .cursor/rules/)
 2. **`build-test-run`**: Validate and resolve failures in feedback mechanisms (build, test, lint, run) to start using coding agents
-3. [wip]**`configure-defaults`**: Auto-detect repository characteristics and apply optimal coding agent settings like allowed and denied bash commands based on your organizational context
+3. **`configure-defaults`**: Auto-detect repository characteristics and apply optimal coding agent settings like allowed and denied bash commands based on your organizational context
 4. **`configure-mcp`**: Set up necessary MCP servers and find servers relevant to your code
-6. **`configure-coding-workflows`**: Install the coding workflows as first class commands
-7. [wip]**`detect-conflicting-instructions`**: Find and resolve contradictory docs, configurations, code blocks that can confuse coding agents
-8. [wip]**`improve-code-quality-checks`**: Strengthen linting, formatting, code cov checks to provide quicker feedback to coding agents
-9. [wip]**`improve-debuggability`**: Improve logging, error handling, and debugging capabilities so that coding agents can debug issues and produce production-ready code
+5. **`configure-coding-workflows`**: Install the coding workflows as first class commands
+6. [wip]**`detect-conflicting-instructions`**: Find and resolve contradictory docs, configurations, code blocks that can confuse coding agents
+7. [wip]**`improve-code-quality-checks`**: Strengthen linting, formatting, code cov checks to provide quicker feedback to coding agents
+8. [wip]**`improve-debuggability`**: Improve logging, error handling, and debugging capabilities so that coding agents can debug issues and produce production-ready code
 
 #### Other devops tasks
 Coming soon
@@ -32,9 +32,9 @@ Coming soon
 
 ####  Coding agent setup Workflows (`workflows/devops/`)
 
-- **Start Using Coding Agent** (`start_using_coding_agent.jinja2.md`): Onboard AI agents to existing large codebases using the first 3 subagents
-- **Use Coding Agent Effectively** (`use_coding_agent_effectively.jinja2.md`): Configure advanced features you need to avoid repeating yourself. Uses subagents 4-6
-- **Improve Code Repository** (`improve_code_repo.jinja2.md`): Detect and fix code quality issues systematically that if not fixed will make the coding agent failure prone. Uses subagents 7-9
+- **Start Using Coding Agent** (`1_start_using_coding_agent.jinja2.md`): Onboard AI agents to existing large codebases using the first 3 subagents
+- **Use Coding Agent Effectively** (`2_use_coding_agent_effectively.jinja2.md`): Configure advanced features you need to avoid repeating yourself. Uses subagents 4-6
+- **Improve Code Repository** (`3_improve_code_repo.jinja2.md`): Detect and fix code quality issues systematically that if not fixed will make the coding agent failure prone. Uses subagents 7-9
 
 #### Coding Workflows (`workflows/coding/`)
 - **TDD Workflow** (`tdd.jinja2.md`): Enforces test-first development with automatic test generation and validation

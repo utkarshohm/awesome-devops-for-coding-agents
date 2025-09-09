@@ -72,6 +72,12 @@ Set up Model Context Protocol servers for enhanced capabilities.
 
 **Subagent**: `@configure-mcp `
 
+{% if agent_type == "claude-code" -%}
+
+### 3. Configure TDD Guard for Claude Code
+**Subagent**: `@configure-tdd-guard `
+
+{% endif %}
 
 ## Next Steps
 

@@ -39,7 +39,7 @@ The agent will:
 
 ### 3. Configure Best-Practice Defaults
 
-**Subagent**: `@configure-defaults `
+**Subagent**: `@configure-defaults`
 
 ## Success Criteria
 
