@@ -2,7 +2,7 @@
 name: configure-supervisor
 description: Configure language-agnostic coding agent supervisor to detect and prevent common failure modes across all programming languages and frameworks
 tools: [install-supervisor-hooks, configure-supervisor-rules, test-supervisor, validate-supervisor-config]
-model: claude-3-5-sonnet-20241022
+model: claude-sonnet-4-20250514
 max_tokens: 8192
 temperature: 0.1
 ---

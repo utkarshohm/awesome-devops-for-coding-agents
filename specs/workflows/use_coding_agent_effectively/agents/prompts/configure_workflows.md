@@ -2,7 +2,7 @@
 name: configure-workflows
 description: Install and configure proven development workflow templates like TDD, spec-driven development, and PR review for coding agent effectiveness
 tools: [list-available-workflows, install-workflow-template, customize-workflow, validate-workflow]
-model: claude-3-5-sonnet-20241022
+model: claude-sonnet-4-20250514
 max_tokens: 6144
 temperature: 0.1
 ---
@@ -43,7 +43,7 @@ Select, install, and customize proven development workflow templates (TDD, spec-
 name: tdd-workflow
 description: Guide Test-Driven Development with Red-Green-Refactor discipline, ensuring tests are written before implementation
 tools: [test-runner, coverage-analyzer, test-generator]
-model: claude-3-5-sonnet-20241022
+model: claude-sonnet-4-20250514
 max_tokens: 6144
 ---
 
@@ -153,7 +153,7 @@ Use this command when implementing new functionality using TDD principles.
 name: spec-driven-development
 description: Implement features by first creating detailed specifications and design documents before writing code
 tools: [spec-generator, design-validator, implementation-tracker]
-model: claude-3-5-sonnet-20241022
+model: claude-sonnet-4-20250514
 max_tokens: 8192
 ---
 
@@ -249,7 +249,7 @@ Track implementation progress by analyzing completed work against specification 
 name: pr-review-workflow
 description: Conduct comprehensive pull request reviews focusing on code quality, security, and maintainability
 tools: [analyze-pr-changes, security-scan, quality-check, generate-review-comments]
-model: claude-3-5-sonnet-20241022
+model: claude-sonnet-4-20250514
 max_tokens: 8192
 ---
 

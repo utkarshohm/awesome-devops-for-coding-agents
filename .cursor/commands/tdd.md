@@ -2,7 +2,7 @@
 name: tdd-workflow
 description: Guide Test-Driven Development with Red-Green-Refactor discipline, ensuring tests are written before implementation
 tools: [read_file, list_dir, grep, codebase_search, glob_file_search]
-model: claude-3-5-sonnet-20241022
+model: claude-sonnet-4-20250514
 max_tokens: 6144
 temperature: 0.1
 ---

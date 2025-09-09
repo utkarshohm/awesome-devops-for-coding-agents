@@ -2,7 +2,7 @@
 name: build-test-run
 description: Execute all development feedback mechanisms, categorize failures by criticality, debug must-have issues, and generate comprehensive status report for coding agent readiness
 tools: [file-analysis, pattern-matching, reasoning-based-validation, status-reporting]
-model: claude-3-5-sonnet-20241022
+model: claude-sonnet-4-20250514
 max_tokens: 8192
 temperature: 0.1
 ---

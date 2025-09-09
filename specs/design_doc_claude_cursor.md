@@ -173,7 +173,7 @@ This workflow helps you configure a coding agent for effective use on an existin
 name: configure-rules
 description: Analyze repository structure and generate coding agent rules focused on DevOps practices, not application logic
 tools: [repo-scan, analyze-deps, discover-commands, generate-rules]
-model: claude-3-5-sonnet-20241022
+model: claude-sonnet-4-20250514
 max_tokens: 8192
 ---
 
@@ -269,7 +269,7 @@ def generate_rules(analysis: RepoAnalysis, agent_type: str, output_path: Path) -
 name: validate-feedback
 description: Run all feedback mechanisms and debug must-have failures to ensure coding agent can work effectively
 tools: [run-feedback-checks, analyze-failures, debug-failures, generate-report]
-model: claude-3-5-sonnet-20241022
+model: claude-sonnet-4-20250514
 max_tokens: 8192
 ---
 
@@ -616,7 +616,7 @@ This workflow improves the codebase to enable greater coding agent autonomy.
 name: improve-feedback
 description: Analyze and improve development feedback mechanisms to provide clearer, more actionable results for coding agents
 tools: [analyze-feedback, suggest-improvements, implement-improvements]
-model: claude-3-5-sonnet-20241022
+model: claude-sonnet-4-20250514
 max_tokens: 8192
 ---
 
@@ -659,7 +659,7 @@ Generate structured improvement suggestions with:
 name: mitigate-conflicts
 description: Detect and resolve conflicting development instructions that confuse coding agents
 tools: [detect-conflicts, analyze-conflicts, resolve-conflicts]
-model: claude-3-5-sonnet-20241022
+model: claude-sonnet-4-20250514
 max_tokens: 8192
 ---
 
@@ -702,7 +702,7 @@ Generate conflict resolution plan with:
 name: improve-debuggability
 description: Enhance error handling, logging, and test failure messages to improve coding agent debugging efficiency
 tools: [analyze-debuggability, suggest-logging, improve-error-handling, enhance-test-messages]
-model: claude-3-5-sonnet-20241022
+model: claude-sonnet-4-20250514
 max_tokens: 8192
 ---
 
@@ -1330,7 +1330,7 @@ Configure coding agent for effective use on existing large codebase.
 name: configure-rules
 description: Analyze repository structure and generate comprehensive coding agent rules focused on DevOps practices, avoiding application-specific logic that may become outdated
 tools: [repo-scan, analyze-deps, discover-commands, generate-rules, ast-parser, config-reader]
-model: claude-3-5-sonnet-20241022
+model: claude-sonnet-4-20250514
 max_tokens: 8192
 temperature: 0.1
 ---
@@ -1514,7 +1514,7 @@ Before finalizing rules:
 name: validate-feedback
 description: Execute all development feedback mechanisms, categorize failures by criticality, debug must-have issues, and generate comprehensive status report
 tools: [run-feedback-checks, analyze-failures, debug-failures, generate-report]
-model: claude-3-5-sonnet-20241022
+model: claude-sonnet-4-20250514
 max_tokens: 8192
 temperature: 0.1
 ---

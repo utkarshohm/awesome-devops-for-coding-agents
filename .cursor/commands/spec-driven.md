@@ -2,7 +2,7 @@
 name: spec-driven-development
 description: Implement features by first creating detailed specifications and design documents before writing code
 tools: [read_file, list_dir, grep, codebase_search, glob_file_search]
-model: claude-3-5-sonnet-20241022
+model: claude-sonnet-4-20250514
 max_tokens: 8192
 temperature: 0.1
 ---

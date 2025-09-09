@@ -2,7 +2,7 @@
 name: configure-defaults
 description: Configure best-practice default settings for coding agents to optimize development workflow and team collaboration
 tools: [configure-agent-settings, validate-settings, backup-existing-config]
-model: claude-3-5-sonnet-20241022
+model: claude-sonnet-4-20250514
 max_tokens: 4096
 temperature: 0.1
 ---

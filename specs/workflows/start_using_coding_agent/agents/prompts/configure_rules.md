@@ -2,7 +2,7 @@
 name: configure-rules
 description: Analyze repository structure and generate comprehensive coding agent rules focused on DevOps practices, avoiding application-specific logic that may become outdated
 tools: [read_file, list_dir, grep, codebase_search, glob_file_search]
-model: claude-3-5-sonnet-20241022
+model: claude-sonnet-4-20250514
 max_tokens: 8192
 temperature: 0.1
 ---

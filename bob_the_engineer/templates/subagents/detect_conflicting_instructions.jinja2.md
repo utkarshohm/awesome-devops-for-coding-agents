@@ -6,7 +6,7 @@ tools: [Read, Write, Edit, Bash, Task]
 {% elif agent_type == "cursor" -%}
 tools: [read_file, list_dir, grep, codebase_search, glob_file_search]
 {% endif %}
-model: claude-3-5-sonnet-20241022
+model: claude-sonnet-4-20250514
 ---
 
 # Conflict Detector Agent
