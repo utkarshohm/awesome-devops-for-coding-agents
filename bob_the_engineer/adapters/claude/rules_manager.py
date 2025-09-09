@@ -159,13 +159,13 @@ class ClaudeRulesManager(BaseAdapter):
         template_file = (
             Path(__file__).parent.parent.parent
             / "templates"
-            / "claude-code-only"
-            / f"settings_{template_name}.json"
+            / "settings"
+            / f"claude_{template_name}.json"
         )
 
         if not template_file.exists():
             available = ClaudeRulesManager.list_available_templates()
-            available_names = [t.stem.replace("settings_", "") for t in available]
+            available_names = [t.stem.replace("claude_", "") for t in available]
             raise FileNotFoundError(
                 f"Template '{template_name}' not found. Available: {', '.join(available_names)}"
             )
@@ -176,12 +176,10 @@ class ClaudeRulesManager(BaseAdapter):
     @staticmethod
     def list_available_templates() -> list[Path]:
         """List all available Claude Code settings templates."""
-        templates_dir = (
-            Path(__file__).parent.parent.parent / "templates" / "claude-code-only"
-        )
+        templates_dir = Path(__file__).parent.parent.parent / "templates" / "settings"
         if not templates_dir.exists():
             return []
-        return list(templates_dir.glob("settings_*.json"))
+        return list(templates_dir.glob("claude_*.json"))
 
     def apply_settings_template(
         self, template: dict[str, Any], dry_run: bool = False

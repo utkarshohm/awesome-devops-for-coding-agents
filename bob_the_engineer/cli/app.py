@@ -257,7 +257,7 @@ def _display_available_templates() -> None:
     table.add_column("Best For", style="dim")
 
     for template_file in templates:
-        template_name = template_file.stem.replace("settings_", "")
+        template_name = template_file.stem.replace("claude_", "")
         try:
             template_data = ClaudeRulesManager.load_settings_template(template_name)
             info = template_data.get("_template_info", {})

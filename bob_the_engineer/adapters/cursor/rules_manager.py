@@ -289,12 +289,12 @@ This command will help you with {command_name.replace("-", " ")} operations.
         Args:
             rules_dir: Directory to install deny list to
         """
-        # Copy bash_deny_list.mdc to rules directory
+        # Copy bash deny list to rules directory
         source_file = (
             Path(__file__).parent.parent.parent
             / "templates"
-            / "cursor-only"
-            / "bash_deny_list.mdc"
+            / "settings"
+            / "cursor_bash_protection.mdc"
         )
         if source_file.exists():
             dest_file = rules_dir / "bash_deny_list.mdc"
@@ -342,8 +342,8 @@ This command will help you with {command_name.replace("-", " ")} operations.
         protection_file = (
             Path(__file__).parent.parent.parent
             / "templates"
-            / "cursor-only"
-            / "bash_protection.sh"
+            / "settings"
+            / "cursor_bash_protection.sh"
         )
 
         if not protection_file.exists():
